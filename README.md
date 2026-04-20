@@ -11,12 +11,12 @@ Entwickelt mit FastAPI, MariaDB und Jinja2-Templates – optimiert für Tablets 
 | Bereich | Zugang | Beschreibung |
 |---|---|---|
 | **Startseite** | Öffentlich | Übersicht aller Turniere mit Status |
-| **Spielplan** | Öffentlich | Live-Spielplan mit automatischer Aktualisierung alle 30 Sekunden |
-| **Rangliste** | Öffentlich | Tabellenstände mit Aufstiegs-/Abstiegsmarkierung |
+| **Spielplan** | Öffentlich | Live-Spielplan aller Runden (Vorrunde, Zwischenrunde, Platzierungsspiele) mit automatischer Aktualisierung alle 30 Sekunden |
+| **Rangliste** | Öffentlich | Endrangliste, Zwischenrunden-Tabellen und Vorrunden-Tabellen pro Feld |
 | **Spielregeln** | Öffentlich | Formatierte Spielregeln (Markdown) |
-| **Team-Seite** | QR-Code + PIN | Teams sehen ihren Spielplan, können Teamnamen ändern |
-| **Schiedsrichter** | Login | Ergebniseingabe per Tablet, große Buttons |
-| **Administration** | Login | Vollständige Turnierverwaltung |
+| **Team-Seite** | QR-Code + PIN | Teams sehen ihren Spielplan, aktuelle Platzierung und können ihre Spielerliste eintragen |
+| **Schiedsrichter** | Login | Ergebniseingabe per Tablet, große Touch-freundliche Buttons |
+| **Administration** | Login | Vollständige Turnierverwaltung mit Spielplan-Generierung und PDF-Export |
 
 ---
 
@@ -31,7 +31,7 @@ Entwickelt mit FastAPI, MariaDB und Jinja2-Templates – optimiert für Tablets 
 
 ```bash
 # Dateien nach /home/fwwo-voelkerball/htdocs/voelkerball.fwwo.at/ hochladen
-# z.B. via SFTP oder git clone
+# z.B. via git clone https://github.com/BattloXX/FW-Voelkerballturnier-App.git .
 ```
 
 ### 2. Python-Umgebung einrichten
@@ -106,8 +106,8 @@ Beim ersten Start wird automatisch ein Superadmin-Account angelegt:
 |---|---|
 | `/` | Startseite – alle Turniere |
 | `/turnier/<slug>` | Turnier-Übersicht |
-| `/turnier/<slug>/spielplan` | Spielplan (Live-Updates) |
-| `/turnier/<slug>/rangliste` | Rangliste |
+| `/turnier/<slug>/spielplan` | Spielplan aller Runden (Live-Updates) |
+| `/turnier/<slug>/rangliste` | Rangliste – Endrangliste, Zwischenrunde, Vorrunde |
 | `/turnier/<slug>/regeln` | Spielregeln |
 | `/turnier/<slug>/team/<id>?pin=<pin>` | Team-Selbstverwaltung via QR-Code |
 
@@ -126,6 +126,8 @@ Beim ersten Start wird automatisch ein Superadmin-Account angelegt:
 | `/admin/turnier/neu` | Neues Turnier erstellen |
 | `/admin/turnier/<id>` | Turnier verwalten (Teams, Spielplan) |
 | `/admin/turnier/<id>/spielplan` | Spielplan-Verwaltung & Ergebniskorrektur |
+| `/admin/turnier/<id>/pdf/alle` | Alle Team-PDFs als Sammel-PDF (Druck vor dem Turnier) |
+| `/admin/turnier/<id>/urkunden` | Urkunden-PDF für alle Teilnehmer (nach dem Turnier) |
 | `/admin/benutzer` | Benutzerverwaltung (nur Superadmin) |
 
 ---
@@ -133,19 +135,26 @@ Beim ersten Start wird automatisch ein Superadmin-Account angelegt:
 ## Turnierdurchführung – Ablauf
 
 ### Vorbereitung (vor dem Turnier)
-1. **Admin-Login** → Neues Turnier erstellen
+1. **Admin-Login** → Neues Turnier erstellen (inkl. Startzeiten für Zwischen- und Platzierungsrunde)
 2. **Teams anlegen** → Name + Feld-Gruppe zuweisen (PIN wird automatisch generiert)
 3. **Spielplan generieren** → Button „Spielplan generieren"
-4. **Team-PDFs drucken** → Pro Team ein A4-Blatt mit QR-Code, PIN und eigenem Spielplan
+4. **Team-PDFs drucken** → Pro Team ein A4-Blatt mit QR-Code, PIN und eigenem Spielplan (`/admin/turnier/<id>/pdf/alle`)
+5. Teams können per QR-Code ihre **Spielerliste** mit Namen und Trikotnummern selbst eintragen
 
 ### Während des Turniers
 1. **Schiedsrichter** melden sich unter `/schiri/login` an
 2. Feld auswählen → nächstes Spiel starten → Ergebnis (verbleibende Spieler) eingeben
 3. **Live-Anzeige** auf Beamer oder öffentlichem Bildschirm: `/turnier/<slug>/spielplan`
+4. Die **Rangliste** aktualisiert sich automatisch – Aufstiegsplätze werden grün markiert
 
 ### Nach der Vorrunde
 1. Admin-Bereich → **Spielplan** → Button **„⚡ Teams einsetzen"**
-2. Die Zwischenrunden- und Platzierungsspiele werden automatisch mit den richtigen Teams aus der Vorrunden-Tabelle befüllt
+2. Zwischenrunden- und Platzierungsspiele werden automatisch mit den richtigen Teams aus der Vorrunden-Tabelle befüllt
+3. Weiter wie gewohnt: Schiedsrichter geben Ergebnisse ein
+
+### Nach dem Turnier
+1. **Urkunden drucken** → `/admin/turnier/<id>/urkunden`
+2. Jedes Team erhält eine eigene Urkunde im Querformat mit Platzierung, Teamname, Spielerliste, Glückwunsch-Text, Feuerwehr-Logo und Unterschriftszeilen
 
 ---
 
@@ -153,21 +162,39 @@ Beim ersten Start wird automatisch ein Superadmin-Account angelegt:
 
 ### Vorrunde
 - Jeder gegen jeden innerhalb der Feldgruppe (Round-Robin)
-- Mehrere Felder spielen gleichzeitig (parallele Zeitslots)
+- Mehrere Felder spielen gleichzeitig in parallelen Zeitslots
 
 ### Zwischenrunde (Kreuzpaarungen)
 - Gruppe Zw.1: Platz 1, 3, 5 von Feld 1 + Platz 2, 4, 6 von Feld 2
 - Gruppe Zw.2: Platz 2, 4, 6 von Feld 1 + Platz 1, 3, 5 von Feld 2
 - Wieder Round-Robin innerhalb der Zwischenrunden-Gruppe
+- Nur bei mehr als einem aktiven Feld
 
 ### Platzierungsspiele
 - 1. Zw.1 vs 1. Zw.2 → Finale (Platz 1/2)
 - 2. Zw.1 vs 2. Zw.2 → Spiel um Platz 3/4
 - usw.
 
+### Startzeiten
+- Können fix hinterlegt werden (Felder `Startzeit Zwischenrunde` / `Startzeit Platzierung` im Turnier-Formular)
+- Alternativ: automatische Berechnung über konfigurierbare Pausenzeiten
+
 ### Wertung
-- **2 Punkte** für Sieg, **1 Punkt** für Niederlage (konfigurierbar)
+- **2 Punkte** für Sieg, **1 Punkt** für Niederlage (konfigurierbar pro Turnier)
 - Tiebreaker: Spieler-Differenz (abgeschossene Spieler)
+
+---
+
+## PDF-Ausgaben
+
+### Team-Ausdruck (vor dem Turnier)
+- Ein A4-Blatt pro Team
+- Enthält: Teamname, Feld-Gruppe, PIN, QR-Code zur Team-Seite, Spielplan
+
+### Urkunden (nach dem Turnier)
+- Querformat A4, eine Seite pro Team
+- Enthält: Feuerwehr-Logo, Turniername, Datum, Platzierung (mit Goldfarbe für 1., Silber für 2., Bronze für 3.), Teamname, Spielerliste mit Trikotnummern, individueller Glückwunsch-Text, Unterschriftszeilen
+- Alle teilnehmenden Teams erhalten eine Urkunde
 
 ---
 
@@ -184,13 +211,22 @@ journalctl -u voelkerball -f
 systemctl restart voelkerball
 ```
 
+### Häufige Probleme
+
+**Neue Datenbankspalten nach Update:**  
+Nach einem Update mit neuen Modell-Feldern müssen diese manuell per `ALTER TABLE` ergänzt werden, da kein automatisches Schema-Migration-Tool verwendet wird.
+
+**bcrypt-Kompatibilität:**  
+`bcrypt==4.0.1` ist in `requirements.txt` fixiert. Nicht auf neuere Versionen updaten, solange passlib 1.7.4 verwendet wird.
+
 ---
 
 ## Technischer Stack
 
 - **Backend:** Python 3.11, FastAPI, SQLAlchemy 2.x
-- **Datenbank:** MariaDB
-- **Frontend:** Jinja2-Templates, Vanilla JavaScript
+- **Datenbank:** MariaDB (mysql+pymysql)
+- **Frontend:** Jinja2-Templates, Vanilla JavaScript (Live-Polling alle 30 s)
 - **PDF:** ReportLab + qrcode
 - **Auth:** JWT (PyJWT), bcrypt (passlib)
 - **Server:** Uvicorn hinter Nginx (CloudPanel)
+- **Fonts:** Oswald + Source Sans 3 (Google Fonts)
