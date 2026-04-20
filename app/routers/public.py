@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models
-from app.services.standings import calculate_standings, calculate_inter_standings
+from app.services.standings import calculate_standings, calculate_inter_standings, calculate_group_standings
 from app.templates_config import templates
 
 router = APIRouter()
@@ -48,13 +48,8 @@ def tournament_schedule(slug: str, request: Request, db: Session = Depends(get_d
         models.Match.round_type == models.RoundType.placement
     ).order_by(models.Match.scheduled_time).all()
 
-    # Nur Felder anzeigen, die tatsächlich Teams haben
     fields = _active_fields(t.id, db)
     prelim_by_field = {f: [m for m in prelim_matches if m.field_number == f] for f in fields}
-    # Zwischenrunde nur anzeigen wenn >1 Feld mit Teams
-    if len(fields) < 2:
-        inter_matches = []
-        placement_matches = []
 
     return templates.TemplateResponse("tournament/schedule.html", {
         "request": request,
@@ -79,11 +74,37 @@ def tournament_standings(slug: str, request: Request, db: Session = Depends(get_
     for f in fields:
         standings_by_field[f] = calculate_standings(t, f, models.RoundType.prelim, db)
 
+    # Zwischenrunde
+    inter_groups = sorted(set(
+        m.field_number for m in db.query(models.Match).filter(
+            models.Match.tournament_id == t.id,
+            models.Match.round_type == models.RoundType.inter,
+        ).all()
+    ))
+    inter_standings_by_group = {}
+    for g in inter_groups:
+        inter_standings_by_group[g] = calculate_inter_standings(t, g, db)
+
+    # Platzierungsspiele / Gesamtranking
+    placement_matches = db.query(models.Match).filter(
+        models.Match.tournament_id == t.id,
+        models.Match.round_type == models.RoundType.placement,
+        models.Match.status == models.MatchStatus.finished,
+    ).all()
+    placement_groups = sorted(set(m.field_number for m in placement_matches))
+    placement_standings_by_group = {}
+    for g in placement_groups:
+        placement_standings_by_group[g] = calculate_group_standings(t, g, models.RoundType.placement, db)
+
     return templates.TemplateResponse("tournament/standings.html", {
         "request": request,
         "tournament": t,
         "standings_by_field": standings_by_field,
         "fields": fields,
+        "inter_standings_by_group": inter_standings_by_group,
+        "inter_groups": inter_groups,
+        "placement_standings_by_group": placement_standings_by_group,
+        "placement_groups": placement_groups,
     })
 
 

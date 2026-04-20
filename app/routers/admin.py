@@ -457,7 +457,16 @@ def urkunden_pdf(tournament_id: int, request: Request, db: Session = Depends(get
 
 
 def _get_final_rankings(tournament: models.Tournament, db: Session) -> list:
-    """Returns list of (rank, team, players) for the Urkunden PDF."""
+    """Returns list of (rank, team, players) for ALL teams, sorted by final placement."""
+    all_teams = db.query(models.Team).filter(
+        models.Team.tournament_id == tournament.id
+    ).order_by(models.Team.field_group, models.Team.name).all()
+
+    def _players(team_id):
+        return db.query(models.Player).filter(
+            models.Player.team_id == team_id
+        ).order_by(models.Player.jersey_number).all()
+
     placement_matches = db.query(models.Match).filter(
         models.Match.tournament_id == tournament.id,
         models.Match.round_type == models.RoundType.placement,
@@ -467,11 +476,14 @@ def _get_final_rankings(tournament: models.Tournament, db: Session) -> list:
         finished = [m for m in placement_matches if m.status == models.MatchStatus.finished]
         rank_groups = sorted(set(m.field_number for m in placement_matches))
         result = []
+        placed_team_ids = set()
         current_rank = 1
+
         for group in rank_groups:
+            group_all = [m for m in placement_matches if m.field_number == group]
             group_finished = [m for m in finished if m.field_number == group]
             team_ids = set()
-            for m in [m for m in placement_matches if m.field_number == group]:
+            for m in group_all:
                 if m.team_a_id:
                     team_ids.add(m.team_a_id)
                 if m.team_b_id:
@@ -479,7 +491,7 @@ def _get_final_rankings(tournament: models.Tournament, db: Session) -> list:
             if not team_ids:
                 continue
 
-            stats = {tid: {"wins": 0, "points": 0, "diff": 0} for tid in team_ids}
+            stats = {tid: {"points": 0, "diff": 0} for tid in team_ids}
             for m in group_finished:
                 if not m.team_a_id or not m.team_b_id:
                     continue
@@ -487,13 +499,11 @@ def _get_final_rankings(tournament: models.Tournament, db: Session) -> list:
                     continue
                 diff = (m.players_remaining_a or 0) - (m.players_remaining_b or 0)
                 if m.score_a > m.score_b:
-                    stats[m.team_a_id]["wins"] += 1
                     stats[m.team_a_id]["points"] += tournament.points_win
                     stats[m.team_a_id]["diff"] += diff
                     stats[m.team_b_id]["points"] += tournament.points_loss
                     stats[m.team_b_id]["diff"] -= diff
                 elif m.score_b > m.score_a:
-                    stats[m.team_b_id]["wins"] += 1
                     stats[m.team_b_id]["points"] += tournament.points_win
                     stats[m.team_b_id]["diff"] -= diff
                     stats[m.team_a_id]["points"] += tournament.points_loss
@@ -503,25 +513,33 @@ def _get_final_rankings(tournament: models.Tournament, db: Session) -> list:
                     stats[m.team_b_id]["points"] += 1
 
             sorted_ids = sorted(
-                team_ids,
-                key=lambda tid: (-stats[tid]["points"], -stats[tid]["diff"])
+                team_ids, key=lambda tid: (-stats[tid]["points"], -stats[tid]["diff"])
             )
             for r, tid in enumerate(sorted_ids):
                 team = db.query(models.Team).filter(models.Team.id == tid).first()
                 if team:
-                    players = db.query(models.Player).filter(
-                        models.Player.team_id == tid
-                    ).order_by(models.Player.jersey_number).all()
-                    result.append((current_rank + r, team, players))
+                    result.append((current_rank + r, team, _players(tid)))
+                    placed_team_ids.add(tid)
             current_rank += len(sorted_ids)
+
+        # Add any teams not covered by placement matches (fallback via prelim rank)
+        remaining = [t for t in all_teams if t.id not in placed_team_ids]
+        if remaining:
+            remaining_entries = []
+            for t in remaining:
+                entries = calculate_standings(tournament, t.field_group, models.RoundType.prelim, db)
+                entry = next((e for e in entries if e.team_id == t.id), None)
+                pts = entry.points if entry else 0
+                diff = entry.diff if entry else 0
+                remaining_entries.append((pts, diff, t))
+            remaining_entries.sort(key=lambda x: (-x[0], -x[1], x[2].name))
+            for r, (_, _, team) in enumerate(remaining_entries):
+                result.append((current_rank + r, team, _players(team.id)))
+
         return result
 
-    # Fall back: use prelim standings per field, combine by rank
-    fields = sorted(db.query(models.Team.field_group).filter(
-        models.Team.tournament_id == tournament.id
-    ).distinct().all(), key=lambda x: x[0])
-    fields = [r[0] for r in fields]
-
+    # No placement matches: use prelim standings per field sorted by rank
+    fields = sorted(set(t.field_group for t in all_teams))
     all_entries = []
     for f in fields:
         entries = calculate_standings(tournament, f, models.RoundType.prelim, db)
@@ -532,10 +550,13 @@ def _get_final_rankings(tournament: models.Tournament, db: Session) -> list:
     for i, entry in enumerate(all_entries):
         team = db.query(models.Team).filter(models.Team.id == entry.team_id).first()
         if team:
-            players = db.query(models.Player).filter(
-                models.Player.team_id == team.id
-            ).order_by(models.Player.jersey_number).all()
-            result.append((i + 1, team, players))
+            result.append((i + 1, team, _players(team.id)))
+
+    # Add teams with no matches at all
+    ranked_ids = {team.id for _, team, _ in result}
+    for r, team in enumerate(t for t in all_teams if t.id not in ranked_ids):
+        result.append((len(result) + 1, team, _players(team.id)))
+
     return result
 
 

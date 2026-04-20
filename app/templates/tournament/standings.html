@@ -24,6 +24,98 @@
 <div class="container">
   <div class="page-content" style="padding-top:0">
 
+    <!-- Platzierungsspiele (Gesamtranking) -->
+    {% if placement_groups %}
+    <h2 class="section-title" style="color:var(--red)">🏆 Endrangliste</h2>
+    {% for g in placement_groups %}
+    {% set grp = placement_standings_by_group[g] %}
+    {% if grp %}
+    {% set base_rank = (g - 1) * (grp | length) + 1 %}
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.5rem">
+      <div style="padding:.6rem 1rem;background:#f9f9f9;border-bottom:1px solid #f0f0f0;font-size:.8rem;font-weight:600;color:#7a7a7a;text-transform:uppercase;letter-spacing:.05em">
+        Platz {{ (g - 1) * (grp | length) + 1 }}–{{ g * (grp | length) }}
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px;text-align:center">#</th>
+              <th>Team</th>
+              <th style="text-align:center">Sp</th>
+              <th style="text-align:center">S</th>
+              <th style="text-align:center">N</th>
+              <th style="text-align:center">Diff</th>
+              <th style="text-align:center">Pkt</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in grp %}
+            <tr>
+              <td class="rank-col">
+                {% set final_rank = (g - 1) * (grp | length) + entry.rank %}
+                {% if final_rank == 1 %}🥇{% elif final_rank == 2 %}🥈{% elif final_rank == 3 %}🥉{% else %}{{ final_rank }}{% endif %}
+              </td>
+              <td><strong>{{ entry.team_name }}</strong></td>
+              <td style="text-align:center">{{ entry.played }}</td>
+              <td style="text-align:center">{{ entry.wins }}</td>
+              <td style="text-align:center">{{ entry.losses }}</td>
+              <td style="text-align:center">{{ '+' if entry.diff > 0 else '' }}{{ entry.diff }}</td>
+              <td class="points-col" style="text-align:center">{{ entry.points }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+
+    <!-- Zwischenrunde -->
+    {% if inter_groups %}
+    <h2 class="section-title">Zwischenrunde</h2>
+    {% for g in inter_groups %}
+    <h3 style="font-family:var(--font-head);font-size:1rem;color:#7a7a7a;margin:.5rem 0 .5rem;text-transform:uppercase;letter-spacing:.05em">Gruppe {{ g }}</h3>
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.5rem">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px;text-align:center">#</th>
+              <th>Team</th>
+              <th style="text-align:center">Sp</th>
+              <th style="text-align:center">S</th>
+              <th style="text-align:center">N</th>
+              <th style="text-align:center">Diff</th>
+              <th style="text-align:center">Pkt</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if inter_standings_by_group[g] %}
+              {% for entry in inter_standings_by_group[g] %}
+              <tr>
+                <td class="rank-col">{{ entry.rank }}</td>
+                <td><strong>{{ entry.team_name }}</strong></td>
+                <td style="text-align:center">{{ entry.played }}</td>
+                <td style="text-align:center">{{ entry.wins }}</td>
+                <td style="text-align:center">{{ entry.losses }}</td>
+                <td style="text-align:center">{{ '+' if entry.diff > 0 else '' }}{{ entry.diff }}</td>
+                <td class="points-col" style="text-align:center">{{ entry.points }}</td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr><td colspan="7" style="text-align:center;color:#7a7a7a;padding:1.5rem">Noch keine Ergebnisse.</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Vorrunde -->
+    <h2 class="section-title">Vorrunde</h2>
+
     <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-bottom:1rem;font-size:.875rem">
       <span style="display:flex;align-items:center;gap:.4rem">
         <span style="width:14px;height:14px;background:#e8f5e9;border:1px solid #2e7d32;border-radius:2px;display:inline-block"></span>
@@ -36,7 +128,7 @@
     </div>
 
     {% for f in fields %}
-    <h2 class="section-title">Vorrunde – Feld {{ f }}</h2>
+    <h3 style="font-family:var(--font-head);font-size:1rem;color:#7a7a7a;margin:.5rem 0 .5rem;text-transform:uppercase;letter-spacing:.05em">Feld {{ f }}</h3>
     <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.5rem">
       <div class="table-wrapper">
         <table>
