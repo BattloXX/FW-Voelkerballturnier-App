@@ -31,12 +31,21 @@
 
       <nav class="header-nav" aria-label="Hauptnavigation">
         {% block header_nav %}
+        {% set nav_tournaments = get_nav_tournaments() %}
         {% if tournament is defined and tournament %}
           <a href="/turnier/{{ tournament.slug }}/spielplan" {% if request.url.path.endswith('/spielplan') %}class="active"{% endif %}>Spielplan</a>
           <a href="/turnier/{{ tournament.slug }}/rangliste" {% if request.url.path.endswith('/rangliste') %}class="active"{% endif %}>Rangliste</a>
-          <a href="/turnier/{{ tournament.slug }}/regeln" class="nav-rules" {% if request.url.path.endswith('/regeln') %}class="active"{% endif %}>Spielregeln</a>
+          <a href="/turnier/{{ tournament.slug }}/regeln" class="nav-rules">Spielregeln</a>
+          {% if nav_tournaments | length > 1 %}
+          <span style="color:rgba(255,255,255,.3);padding:0 .25rem">|</span>
+          {% for t in nav_tournaments %}{% if t.slug != tournament.slug %}
+          <a href="/turnier/{{ t.slug }}">{{ t.name }}</a>
+          {% endif %}{% endfor %}
+          {% endif %}
         {% else %}
-          <a href="/">Turniere</a>
+          {% for t in nav_tournaments %}
+          <a href="/turnier/{{ t.slug }}">{{ t.name }}</a>
+          {% endfor %}
         {% endif %}
         {% endblock %}
       </nav>
@@ -50,13 +59,23 @@
 
 <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile Navigation">
   {% block mobile_nav %}
+  {% set nav_tournaments = get_nav_tournaments() %}
   {% if tournament is defined and tournament %}
     <a href="/turnier/{{ tournament.slug }}">Übersicht</a>
     <a href="/turnier/{{ tournament.slug }}/spielplan">Spielplan</a>
     <a href="/turnier/{{ tournament.slug }}/rangliste">Rangliste</a>
     <a href="/turnier/{{ tournament.slug }}/regeln">Spielregeln</a>
+    {% if nav_tournaments | length > 1 %}
+    <div style="border-top:1px solid rgba(255,255,255,.1);margin:.5rem 0;padding-top:.5rem;font-size:.7rem;color:rgba(255,255,255,.4);padding-left:1rem;text-transform:uppercase;letter-spacing:.08em">Andere Turniere</div>
+    {% for t in nav_tournaments %}{% if t.slug != tournament.slug %}
+    <a href="/turnier/{{ t.slug }}">{{ t.name }}</a>
+    {% endif %}{% endfor %}
+    {% endif %}
   {% else %}
     <a href="/">Alle Turniere</a>
+    {% for t in nav_tournaments %}
+    <a href="/turnier/{{ t.slug }}">{{ t.name }}</a>
+    {% endfor %}
   {% endif %}
   {% endblock %}
 </nav>

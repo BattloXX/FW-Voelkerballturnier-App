@@ -49,8 +49,13 @@ def tournament_schedule(slug: str, request: Request, db: Session = Depends(get_d
         models.Match.round_type == models.RoundType.placement
     ).order_by(models.Match.scheduled_time).all()
 
-    fields = list(range(1, t.num_fields + 1))
+    # Nur Felder anzeigen, die tatsächlich Teams haben
+    fields = _active_fields(t.id, db)
     prelim_by_field = {f: [m for m in prelim_matches if m.field_number == f] for f in fields}
+    # Zwischenrunde nur anzeigen wenn >1 Feld mit Teams
+    if len(fields) < 2:
+        inter_matches = []
+        placement_matches = []
 
     return templates.TemplateResponse("tournament/schedule.html", {
         "request": request,
@@ -70,7 +75,7 @@ def tournament_standings(slug: str, request: Request, db: Session = Depends(get_
     if not t:
         raise HTTPException(status_code=404, detail="Turnier nicht gefunden")
 
-    fields = list(range(1, t.num_fields + 1))
+    fields = _active_fields(t.id, db)
     standings_by_field = {}
     for f in fields:
         standings_by_field[f] = calculate_standings(t, f, models.RoundType.prelim, db)
@@ -111,7 +116,7 @@ def live_data(slug: str, db: Session = Depends(get_db)):
         models.Match.tournament_id == t.id
     ).order_by(models.Match.scheduled_time).all()
 
-    fields = list(range(1, t.num_fields + 1))
+    fields = _active_fields(t.id, db)
     standings = {}
     for f in fields:
         s = calculate_standings(t, f, models.RoundType.prelim, db)
@@ -134,3 +139,11 @@ def live_data(slug: str, db: Session = Depends(get_db)):
         })
 
     return JSONResponse({"matches": match_data, "standings": standings})
+
+
+def _active_fields(tournament_id: int, db: Session) -> list[int]:
+    """Gibt nur Felder zurück, die tatsächlich Teams haben."""
+    rows = db.query(models.Team.field_group).filter(
+        models.Team.tournament_id == tournament_id
+    ).distinct().order_by(models.Team.field_group).all()
+    return [r[0] for r in rows]
