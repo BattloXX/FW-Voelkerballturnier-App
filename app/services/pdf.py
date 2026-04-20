@@ -1,12 +1,12 @@
 import io
 import os
 import qrcode
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib import colors
 from reportlab.lib.units import cm
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, PageBreak, HRFlowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from sqlalchemy.orm import Session
 from app import models
 
@@ -141,6 +141,147 @@ def generate_team_pdf(team: models.Team, tournament: models.Tournament, matches:
         story.append(t)
     else:
         story.append(Paragraph("Noch kein Spielplan generiert.", body_style))
+
+    doc.build(story)
+    buf.seek(0)
+    return buf.read()
+
+
+RANK_LABELS = {1: "1. Platz", 2: "2. Platz", 3: "3. Platz"}
+RANK_COLORS = {
+    1: colors.HexColor("#FFD700"),
+    2: colors.HexColor("#C0C0C0"),
+    3: colors.HexColor("#CD7F32"),
+}
+
+
+def generate_urkunde_pdf(rankings: list, tournament: models.Tournament) -> bytes:
+    """rankings: list of (rank, team, players) tuples sorted by rank."""
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=landscape(A4),
+        topMargin=1.5*cm, bottomMargin=1.5*cm,
+        leftMargin=2*cm, rightMargin=2*cm
+    )
+    styles = getSampleStyleSheet()
+    story = []
+
+    cert_title_style = ParagraphStyle(
+        "CertTitle", fontName="Helvetica-Bold", fontSize=13,
+        textColor=colors.white, alignment=TA_CENTER, spaceAfter=0, spaceBefore=0, leading=18,
+    )
+    rank_style = ParagraphStyle(
+        "CertRank", fontName="Helvetica-Bold", fontSize=52,
+        textColor=FW_RED, alignment=TA_CENTER, leading=60,
+    )
+    rank_label_style = ParagraphStyle(
+        "CertRankLabel", fontName="Helvetica-Bold", fontSize=18,
+        textColor=FW_DARK, alignment=TA_CENTER, leading=24,
+    )
+    team_style = ParagraphStyle(
+        "CertTeam", fontName="Helvetica-Bold", fontSize=28,
+        textColor=FW_RED, alignment=TA_CENTER, leading=34, spaceAfter=6,
+    )
+    players_label_style = ParagraphStyle(
+        "CertPlayersLabel", fontName="Helvetica-Bold", fontSize=10,
+        textColor=colors.HexColor("#888888"), alignment=TA_CENTER, leading=14,
+    )
+    player_style = ParagraphStyle(
+        "CertPlayer", fontName="Helvetica", fontSize=11,
+        textColor=FW_DARK, alignment=TA_CENTER, leading=15,
+    )
+    footer_style = ParagraphStyle(
+        "CertFooter", fontName="Helvetica", fontSize=9,
+        textColor=colors.HexColor("#888888"), alignment=TA_CENTER,
+    )
+    date_str = tournament.date.strftime("%d.%m.%Y") if tournament.date else ""
+
+    for i, (rank, team, players) in enumerate(rankings):
+        if i > 0:
+            story.append(PageBreak())
+
+        accent = RANK_COLORS.get(rank, FW_DARK)
+
+        header_data = [[Paragraph(
+            f"<b>{tournament.name}</b> &nbsp;·&nbsp; {date_str} &nbsp;·&nbsp; Feuerwehr Wolfurt",
+            cert_title_style
+        )]]
+        header_table = Table(header_data, colWidths=[25.7*cm])
+        header_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), FW_RED),
+            ("TOPPADDING", (0, 0), (-1, -1), 10),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+        ]))
+        story.append(header_table)
+        story.append(Spacer(1, 0.8*cm))
+
+        story.append(Paragraph("URKUNDE", ParagraphStyle(
+            "UK", fontName="Helvetica-Bold", fontSize=16,
+            textColor=colors.HexColor("#888888"), alignment=TA_CENTER, spaceAfter=4, leading=20,
+        )))
+        story.append(Paragraph("Blaulicht Völkerball Turnier", ParagraphStyle(
+            "UK2", fontName="Helvetica", fontSize=12,
+            textColor=FW_DARK, alignment=TA_CENTER, leading=16,
+        )))
+        story.append(Spacer(1, 0.5*cm))
+        story.append(HRFlowable(width="100%", thickness=2, color=accent, spaceAfter=0.5*cm))
+
+        rank_label = RANK_LABELS.get(rank, f"{rank}. Platz")
+        rank_cell = [[Paragraph(str(rank), rank_style)], [Paragraph(rank_label, rank_label_style)]]
+        team_cell = [[Spacer(1, 0.4*cm)], [Paragraph(team.name, team_style)]]
+
+        layout_table = Table([[rank_cell, team_cell]], colWidths=[5*cm, 20.7*cm])
+        layout_table.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("ALIGN", (0, 0), (0, -1), "CENTER"),
+        ]))
+        story.append(layout_table)
+        story.append(HRFlowable(
+            width="100%", thickness=1, color=colors.HexColor("#eeeeee"),
+            spaceBefore=0.4*cm, spaceAfter=0.4*cm
+        ))
+
+        if players:
+            story.append(Paragraph("Spieler", players_label_style))
+            story.append(Spacer(1, 0.2*cm))
+            player_cols = 3
+            rows = []
+            row = []
+            for p in players:
+                nr = f"#{p.jersey_number} " if p.jersey_number is not None else ""
+                row.append(Paragraph(f"{nr}{p.name}", player_style))
+                if len(row) == player_cols:
+                    rows.append(row)
+                    row = []
+            if row:
+                while len(row) < player_cols:
+                    row.append(Paragraph("", player_style))
+                rows.append(row)
+            if rows:
+                col_w = 25.7 / player_cols
+                player_table = Table(rows, colWidths=[col_w*cm] * player_cols)
+                player_table.setStyle(TableStyle([
+                    ("TOPPADDING", (0, 0), (-1, -1), 4),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ]))
+                story.append(player_table)
+
+        story.append(Spacer(1, 0.6*cm))
+        story.append(HRFlowable(width="100%", thickness=2, color=accent, spaceAfter=0.3*cm))
+
+        sig_data = [[
+            Paragraph("_________________________\nDatum / Unterschrift", footer_style),
+            Paragraph("_________________________\nTurnierleiterin", footer_style),
+        ]]
+        sig_table = Table(sig_data, colWidths=[12.85*cm, 12.85*cm])
+        sig_table.setStyle(TableStyle([
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ]))
+        story.append(sig_table)
+
+    if not rankings:
+        story.append(Paragraph("Keine Platzierungen vorhanden.", styles["Normal"]))
 
     doc.build(story)
     buf.seek(0)

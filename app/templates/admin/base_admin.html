@@ -46,6 +46,16 @@
       <div class="admin-sidebar-section">Navigation</div>
       <a href="/admin/dashboard">📊 Dashboard</a>
       <a href="/admin/turnier/neu">➕ Neues Turnier</a>
+      {% set all_tournaments = get_all_tournaments() %}
+      {% if all_tournaments %}
+      <div class="admin-sidebar-section" style="margin-top:.5rem">Turniere</div>
+      {% for t in all_tournaments %}
+      <a href="/admin/turnier/{{ t.id }}" style="display:flex;align-items:center;gap:.4rem;padding-left:.75rem">
+        <span style="font-size:.7rem;{% if t.status.value == 'active' %}color:#22c55e{% elif t.status.value == 'registration' %}color:#f59e0b{% else %}color:#9ca3af{% endif %}">●</span>
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.name }}</span>
+      </a>
+      {% endfor %}
+      {% endif %}
       {% if user.role.value == 'superadmin' %}
       <div class="admin-sidebar-section" style="margin-top:.5rem">System</div>
       <a href="/admin/benutzer">👥 Benutzer</a>

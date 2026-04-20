@@ -1,14 +1,13 @@
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models
 from app.auth import authenticate_user, create_access_token, require_referee, get_token_from_request, get_user_from_token
+from app.templates_config import templates
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/schiri/login", response_class=HTMLResponse)
