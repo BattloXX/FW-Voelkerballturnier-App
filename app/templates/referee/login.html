@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schiedsrichter Login</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div style="margin-bottom:.5rem">
+        <img src="https://feuerwehr.wolfurt.at/wp-content/uploads/2015/02/cropped-logo-feuerwehr-aktiv-150x150.jpg"
+             alt="Feuerwehr Wolfurt" style="width:72px;height:72px;border-radius:50%;margin:0 auto">
+      </div>
+      <div class="auth-title">Schiedsrichter</div>
+      <div class="auth-sub">Blaulicht Völkerball Turnier</div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/schiri/login">
+      <div class="form-group">
+        <label class="form-label" for="username">Benutzername</label>
+        <input type="text" id="username" name="username" class="form-control" required autocomplete="username" autofocus>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Passwort</label>
+        <input type="password" id="password" name="password" class="form-control" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:.5rem">Anmelden</button>
+    </form>
+
+    <div style="text-align:center;margin-top:1.25rem">
+      <a href="/" style="font-size:.85rem;color:#7a7a7a">← Zurück zur Startseite</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

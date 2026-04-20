@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ tournament.name }} – Übersicht{% endblock %}
+{% block body_slug %}{{ tournament.slug }}{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <div class="page-hero-inner">
+      <div class="breadcrumb" style="color:rgba(255,255,255,.6)">
+        <a href="/" style="color:rgba(255,255,255,.6)">Turniere</a>
+        <span class="breadcrumb-sep">›</span>
+        <span style="color:white">{{ tournament.name }}</span>
+      </div>
+      <h1 class="page-hero-title">{{ tournament.name }}</h1>
+      <div class="page-hero-meta">
+        <span>📅 {{ tournament.date.strftime('%d.%m.%Y') }}</span>
+        {% if tournament.num_fields %}<span>⚽ {{ tournament.num_fields }} Felder</span>{% endif %}
+        {% if tournament.status.value == 'registration' %}
+          <span class="badge badge-registration"><span class="badge-dot"></span>Anmeldung offen</span>
+        {% elif tournament.status.value == 'active' %}
+          <span class="badge badge-active"><span class="badge-dot"></span>Läuft</span>
+        {% else %}
+          <span class="badge badge-finished"><span class="badge-dot"></span>Abgeschlossen</span>
+        {% endif %}
+      </div>
+      <div class="page-hero-actions">
+        <a href="/turnier/{{ tournament.slug }}/spielplan" class="btn">📋 Spielplan</a>
+        <a href="/turnier/{{ tournament.slug }}/rangliste" class="btn">🏆 Rangliste</a>
+        <a href="/turnier/{{ tournament.slug }}/regeln" class="btn">📖 Spielregeln</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="page-content" style="padding-top:0">
+    {% if tournament.description %}
+    <div class="card">
+      <p>{{ tournament.description }}</p>
+    </div>
+    {% endif %}
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem">
+      <a href="/turnier/{{ tournament.slug }}/spielplan" style="text-decoration:none">
+        <div class="card" style="text-align:center;cursor:pointer;transition:box-shadow .18s">
+          <div style="font-size:2.5rem;margin-bottom:.5rem">📋</div>
+          <div class="card-title">Spielplan</div>
+          <p style="font-size:.875rem;color:#7a7a7a;margin-top:.35rem">Alle Spiele mit Uhrzeiten und Ergebnissen</p>
+        </div>
+      </a>
+      <a href="/turnier/{{ tournament.slug }}/rangliste" style="text-decoration:none">
+        <div class="card" style="text-align:center;cursor:pointer">
+          <div style="font-size:2.5rem;margin-bottom:.5rem">🏆</div>
+          <div class="card-title">Rangliste</div>
+          <p style="font-size:.875rem;color:#7a7a7a;margin-top:.35rem">Aktuelle Tabellenstände aller Gruppen</p>
+        </div>
+      </a>
+      <a href="/turnier/{{ tournament.slug }}/regeln" style="text-decoration:none">
+        <div class="card" style="text-align:center;cursor:pointer">
+          <div style="font-size:2.5rem;margin-bottom:.5rem">📖</div>
+          <div class="card-title">Spielregeln</div>
+          <p style="font-size:.875rem;color:#7a7a7a;margin-top:.35rem">Offizielle Regelwerk des Turniers</p>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

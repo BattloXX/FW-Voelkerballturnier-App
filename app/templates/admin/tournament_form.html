@@ -1,0 +1,168 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{% if tournament %}Turnier bearbeiten{% else %}Neues Turnier{% endif %}{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+  <h1 class="admin-page-title">{% if tournament %}Turnier bearbeiten{% else %}Neues Turnier{% endif %}</h1>
+  <a href="/admin/dashboard" class="btn btn-secondary">← Zurück</a>
+</div>
+
+{% if error %}
+<div class="alert alert-error">{{ error }}</div>
+{% endif %}
+
+<div class="card">
+  <form method="post" enctype="multipart/form-data">
+    <div class="form-section-title">Allgemein</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="name">Turniername *</label>
+        <input type="text" id="name" name="name" class="form-control" required
+               value="{{ tournament.name if tournament else '' }}" placeholder="z.B. Blaulicht Völkerball 2025">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="slug">URL-Slug *</label>
+        <input type="text" id="slug" name="slug" class="form-control" required
+               value="{{ tournament.slug if tournament else '' }}" placeholder="z.B. voelkerball-2025">
+        <div class="form-hint">Nur Kleinbuchstaben, Zahlen, Bindestriche. URL: /turnier/slug</div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="date">Turnierdatum *</label>
+        <input type="datetime-local" id="date" name="date" class="form-control" required
+               value="{{ tournament.date.strftime('%Y-%m-%dT%H:%M') if tournament and tournament.date else '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="start_time">Startzeit (Spiele)</label>
+        <input type="datetime-local" id="start_time" name="start_time" class="form-control"
+               value="{{ tournament.start_time.strftime('%Y-%m-%dT%H:%M') if tournament and tournament.start_time else '' }}">
+        <div class="form-hint">Beginn des ersten Spiels</div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="status">Status</label>
+        <select id="status" name="status" class="form-control">
+          <option value="registration" {% if not tournament or tournament.status.value == 'registration' %}selected{% endif %}>Anmeldung offen</option>
+          <option value="active" {% if tournament and tournament.status.value == 'active' %}selected{% endif %}>Aktiv (läuft)</option>
+          <option value="finished" {% if tournament and tournament.status.value == 'finished' %}selected{% endif %}>Abgeschlossen</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="logo">Logo (Bild)</label>
+        <input type="file" id="logo" name="logo" class="form-control" accept="image/*">
+        {% if tournament and tournament.logo_path %}
+        <div class="form-hint">Aktuell: <a href="{{ tournament.logo_path }}" target="_blank">Logo ansehen</a></div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="description">Beschreibung</label>
+      <textarea id="description" name="description" class="form-control" rows="2"
+                placeholder="Kurze Beschreibung des Turniers">{{ tournament.description if tournament else '' }}</textarea>
+    </div>
+
+    <div class="form-section-title">Spielkonfiguration</div>
+    <div class="form-row form-row-3">
+      <div class="form-group">
+        <label class="form-label" for="num_fields">Anzahl Felder</label>
+        <input type="number" id="num_fields" name="num_fields" class="form-control" min="1" max="10"
+               value="{{ tournament.num_fields if tournament else 2 }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="promotions_per_field">Aufsteiger pro Feld</label>
+        <input type="number" id="promotions_per_field" name="promotions_per_field" class="form-control" min="1"
+               value="{{ tournament.promotions_per_field if tournament else 6 }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="points_win">Punkte Sieg</label>
+        <input type="number" id="points_win" name="points_win" class="form-control" min="1"
+               value="{{ tournament.points_win if tournament else 2 }}">
+      </div>
+    </div>
+    <div class="form-row form-row-3">
+      <div class="form-group">
+        <label class="form-label" for="points_loss">Punkte Niederlage</label>
+        <input type="number" id="points_loss" name="points_loss" class="form-control" min="0"
+               value="{{ tournament.points_loss if tournament else 1 }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="game_duration_prelim">Spielzeit Vorrunde (min)</label>
+        <input type="number" id="game_duration_prelim" name="game_duration_prelim" class="form-control" min="1"
+               value="{{ tournament.game_duration_prelim if tournament else 5 }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="game_duration_inter">Spielzeit Zwischenrunde (min)</label>
+        <input type="number" id="game_duration_inter" name="game_duration_inter" class="form-control" min="1"
+               value="{{ tournament.game_duration_inter if tournament else 10 }}">
+      </div>
+    </div>
+    <div class="form-row form-row-3">
+      <div class="form-group">
+        <label class="form-label" for="game_duration_placement">Spielzeit Platzierung (min)</label>
+        <input type="number" id="game_duration_placement" name="game_duration_placement" class="form-control" min="1"
+               value="{{ tournament.game_duration_placement if tournament else 10 }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="break_between_games">Pause zwischen Spielen (min)</label>
+        <input type="number" id="break_between_games" name="break_between_games" class="form-control" min="0"
+               value="{{ tournament.break_between_games if tournament else 2 }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="break_prelim_to_inter">Pause Vor- → Zwischenrunde (min)</label>
+        <input type="number" id="break_prelim_to_inter" name="break_prelim_to_inter" class="form-control" min="0"
+               value="{{ tournament.break_prelim_to_inter if tournament else 15 }}">
+        <div class="form-hint">Wird ignoriert wenn fixe Startzeit gesetzt ist</div>
+      </div>
+    </div>
+
+    <div class="form-section-title">Fixe Startzeiten (optional)</div>
+    <div class="alert alert-info" style="margin-bottom:.75rem;font-size:.875rem">
+      Wenn eine fixe Startzeit gesetzt ist, beginnt diese Runde exakt zur angegebenen Uhrzeit – unabhängig von den Pausenzeiten.
+      Leer lassen = automatisch aus Pausenzeiten berechnet.
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="inter_start_time">Fixe Startzeit Zwischenrunde</label>
+        <input type="datetime-local" id="inter_start_time" name="inter_start_time" class="form-control"
+               value="{{ tournament.inter_start_time.strftime('%Y-%m-%dT%H:%M') if tournament and tournament.inter_start_time else '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="placement_start_time">Fixe Startzeit Platzierungsspiele</label>
+        <input type="datetime-local" id="placement_start_time" name="placement_start_time" class="form-control"
+               value="{{ tournament.placement_start_time.strftime('%Y-%m-%dT%H:%M') if tournament and tournament.placement_start_time else '' }}">
+      </div>
+    </div>
+
+    <div class="form-section-title">Spielregeln</div>
+    <div class="form-group">
+      <label class="form-label" for="rules_text">Regeltext (Markdown)</label>
+      <textarea id="rules_text" name="rules_text" class="form-control" rows="10"
+                placeholder="## Spielregeln&#10;&#10;- Regel 1&#10;- Regel 2"
+                style="font-family:monospace;font-size:.875rem">{{ tournament.rules_text if tournament else '' }}</textarea>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary btn-lg">💾 Speichern</button>
+      <a href="/admin/dashboard" class="btn btn-secondary btn-lg">Abbrechen</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('name')?.addEventListener('input', function() {
+  const slugField = document.getElementById('slug');
+  if (!slugField.value || slugField.dataset.edited !== 'true') {
+    slugField.value = this.value.toLowerCase()
+      .replace(/[äöüß]/g, c => ({'ä':'ae','ö':'oe','ü':'ue','ß':'ss'}[c]))
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+});
+document.getElementById('slug')?.addEventListener('input', function() {
+  this.dataset.edited = 'true';
+});
+</script>
+{% endblock %}

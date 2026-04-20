@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Feld {{ field_number }} – {{ tournament.name }}</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <div class="header-inner">
+      <a href="/" class="header-logo">
+        <img src="https://feuerwehr.wolfurt.at/wp-content/uploads/2015/02/cropped-logo-feuerwehr-aktiv-150x150.jpg" alt="Feuerwehr Wolfurt">
+      </a>
+      <div class="header-title">
+        <div class="site-name">Feld {{ field_number }}</div>
+        <div class="site-sub">{{ tournament.name }}</div>
+      </div>
+      <nav class="header-nav">
+        <a href="/schiri/dashboard">← Dashboard</a>
+        <a href="/schiri/logout">Abmelden</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="referee-layout">
+
+    {% if active_match %}
+    <div class="match-display">
+      <div class="match-display-header">
+        <h3>🟢 Läuft gerade</h3>
+        <span class="badge badge-active"><span class="badge-dot"></span>Aktiv</span>
+      </div>
+      <div class="match-display-body">
+        <div class="match-teams-display">
+          <div class="match-team-name">{{ active_match.team_a.name if active_match.team_a else (active_match.team_a_placeholder or '?') }}</div>
+          <div class="match-vs">VS</div>
+          <div class="match-team-name">{{ active_match.team_b.name if active_match.team_b else (active_match.team_b_placeholder or '?') }}</div>
+        </div>
+
+        <p style="text-align:center;font-size:.85rem;color:#7a7a7a;margin-bottom:1rem">
+          Verbleibende Spieler eingeben
+        </p>
+
+        <div class="result-input-grid">
+          <div class="stepper-group">
+            <label class="result-input-label">{{ active_match.team_a.name if active_match.team_a else 'Team A' }}</label>
+            <button class="stepper-btn plus" type="button">+</button>
+            <input type="number" id="players-a" class="result-input" value="0" min="0" max="99" inputmode="numeric">
+            <button class="stepper-btn minus" type="button">−</button>
+          </div>
+          <div class="result-sep">:</div>
+          <div class="stepper-group">
+            <label class="result-input-label">{{ active_match.team_b.name if active_match.team_b else 'Team B' }}</label>
+            <button class="stepper-btn plus" type="button">+</button>
+            <input type="number" id="players-b" class="result-input" value="0" min="0" max="99" inputmode="numeric">
+            <button class="stepper-btn minus" type="button">−</button>
+          </div>
+        </div>
+
+        <button class="referee-confirm-btn" id="submit-result-btn">
+          ✅ Ergebnis bestätigen
+        </button>
+      </div>
+    </div>
+
+    <div id="confirmation-overlay" class="confirmation-overlay">
+      <div class="confirmation-dialog">
+        <div class="confirmation-title">Ergebnis speichern?</div>
+        <div style="margin:.5rem 0;font-size:.9rem;color:#7a7a7a">
+          {{ active_match.team_a.name if active_match.team_a else 'Team A' }}
+          &nbsp;vs&nbsp;
+          {{ active_match.team_b.name if active_match.team_b else 'Team B' }}
+        </div>
+        <div class="confirmation-score">
+          <span id="confirm-score-a">0</span> : <span id="confirm-score-b">0</span>
+        </div>
+        <p style="font-size:.85rem;color:#7a7a7a">Verbleibende Spieler</p>
+        <div class="confirmation-actions">
+          <button class="btn btn-secondary btn-lg" id="cancel-result-btn">Abbrechen</button>
+          <button class="btn btn-primary btn-lg" id="confirm-result-btn"
+                  data-match-id="{{ active_match.id }}"
+                  data-slug="{{ tournament.slug }}">
+            Speichern
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {% elif next_match %}
+    <div class="match-display">
+      <div class="match-display-header">
+        <h3>⏳ Nächstes Spiel</h3>
+        <span class="badge badge-pending"><span class="badge-dot"></span>Ausstehend</span>
+      </div>
+      <div class="match-display-body">
+        <div class="match-teams-display">
+          <div class="match-team-name">{{ next_match.team_a.name if next_match.team_a else (next_match.team_a_placeholder or '?') }}</div>
+          <div class="match-vs">VS</div>
+          <div class="match-team-name">{{ next_match.team_b.name if next_match.team_b else (next_match.team_b_placeholder or '?') }}</div>
+        </div>
+        {% if next_match.scheduled_time %}
+        <p style="text-align:center;color:#7a7a7a;margin-bottom:1.25rem">
+          🕐 Geplant: <strong>{{ next_match.scheduled_time.strftime('%H:%M') }}</strong>
+        </p>
+        {% endif %}
+        <button class="referee-confirm-btn" id="start-match-btn"
+                data-match-id="{{ next_match.id }}"
+                data-slug="{{ tournament.slug }}"
+                style="background:var(--green-text)">
+          ▶ Spiel starten
+        </button>
+      </div>
+    </div>
+    {% else %}
+    <div class="card" style="text-align:center;padding:2.5rem 1rem">
+      <div style="font-size:3rem;margin-bottom:.75rem">🏆</div>
+      <div class="card-title" style="margin-bottom:.5rem">Alle Spiele beendet</div>
+      <p style="color:#7a7a7a">Keine weiteren Spiele für Feld {{ field_number }}.</p>
+      <a href="/schiri/dashboard" class="btn btn-secondary" style="margin-top:1rem">← Zurück</a>
+    </div>
+    {% endif %}
+
+    <a href="/turnier/{{ tournament.slug }}/spielplan" class="btn btn-secondary btn-block" style="margin-top:.75rem">
+      Spielplan anzeigen
+    </a>
+  </div>
+</main>
+
+<script src="/static/js/referee.js"></script>
+</body>
+</html>

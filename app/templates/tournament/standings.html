@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Rangliste – {{ tournament.name }}{% endblock %}
+{% block body_slug %}{{ tournament.slug }}{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <div class="page-hero-inner">
+      <div class="breadcrumb" style="color:rgba(255,255,255,.6)">
+        <a href="/" style="color:rgba(255,255,255,.6)">Turniere</a>
+        <span class="breadcrumb-sep">›</span>
+        <a href="/turnier/{{ tournament.slug }}" style="color:rgba(255,255,255,.6)">{{ tournament.name }}</a>
+        <span class="breadcrumb-sep">›</span>
+        <span style="color:white">Rangliste</span>
+      </div>
+      <h1 class="page-hero-title">Rangliste</h1>
+      <div class="page-hero-meta">
+        <span id="live-indicator" class="live-indicator" style="display:none"><span class="live-dot"></span> Live</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="page-content" style="padding-top:0">
+
+    <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-bottom:1rem;font-size:.875rem">
+      <span style="display:flex;align-items:center;gap:.4rem">
+        <span style="width:14px;height:14px;background:#e8f5e9;border:1px solid #2e7d32;border-radius:2px;display:inline-block"></span>
+        Aufstieg (Top {{ tournament.promotions_per_field }})
+      </span>
+      <span style="display:flex;align-items:center;gap:.4rem">
+        <span style="width:14px;height:14px;background:#ffebee;border:1px solid #c62828;border-radius:2px;display:inline-block"></span>
+        Abstieg
+      </span>
+    </div>
+
+    {% for f in fields %}
+    <h2 class="section-title">Vorrunde – Feld {{ f }}</h2>
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.5rem">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px;text-align:center">#</th>
+              <th>Team</th>
+              <th style="text-align:center">Sp</th>
+              <th style="text-align:center">S</th>
+              <th style="text-align:center">N</th>
+              <th style="text-align:center">Diff</th>
+              <th style="text-align:center">Pkt</th>
+            </tr>
+          </thead>
+          <tbody data-standings-field="{{ f }}">
+            {% if standings_by_field[f] %}
+              {% for entry in standings_by_field[f] %}
+              <tr data-team-id="{{ entry.team_id }}" class="{% if entry.promotes %}promotes{% else %}relegates{% endif %}">
+                <td class="rank-col">{{ entry.rank }}</td>
+                <td><strong>{{ entry.team_name }}</strong></td>
+                <td style="text-align:center">{{ entry.played }}</td>
+                <td style="text-align:center">{{ entry.wins }}</td>
+                <td style="text-align:center">{{ entry.losses }}</td>
+                <td style="text-align:center">{{ '+' if entry.diff > 0 else '' }}{{ entry.diff }}</td>
+                <td class="points-col" style="text-align:center">{{ entry.points }}</td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr><td colspan="7" style="text-align:center;color:#7a7a7a;padding:1.5rem">Noch keine Ergebnisse eingetragen.</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endfor %}
+
+    <p style="font-size:.8rem;color:#7a7a7a;margin-top:1rem">
+      Punkte: {{ tournament.points_win }} für Sieg, {{ tournament.points_loss }} für Niederlage &nbsp;|&nbsp;
+      Aufsteiger: Top {{ tournament.promotions_per_field }} pro Feld
+    </p>
+  </div>
+</div>
+{% endblock %}

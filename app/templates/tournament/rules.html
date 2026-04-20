@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Spielregeln – {{ tournament.name }}{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <div class="page-hero-inner">
+      <div class="breadcrumb" style="color:rgba(255,255,255,.6)">
+        <a href="/" style="color:rgba(255,255,255,.6)">Turniere</a>
+        <span class="breadcrumb-sep">›</span>
+        <a href="/turnier/{{ tournament.slug }}" style="color:rgba(255,255,255,.6)">{{ tournament.name }}</a>
+        <span class="breadcrumb-sep">›</span>
+        <span style="color:white">Spielregeln</span>
+      </div>
+      <h1 class="page-hero-title">Spielregeln</h1>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="page-content" style="padding-top:0">
+    <div class="card">
+      {% if rules_html %}
+      <div class="rules-content">{{ rules_html | safe }}</div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">📖</div>
+        <p>Noch keine Spielregeln hinterlegt.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

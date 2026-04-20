@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block title %}{{ team.name }} – {{ tournament.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-content">
+
+    {% if not pin_valid %}
+    <div class="alert alert-error">❌ Ungültiger PIN. Bitte den PIN vom Team-Ausdruck verwenden.</div>
+    {% endif %}
+
+    {% if saved is not none and saved %}
+    <div class="alert alert-success">✅ {{ saved }} Spieler erfolgreich gespeichert.</div>
+    {% endif %}
+
+    {% if error == 'pin' %}
+    <div class="alert alert-error">❌ Falscher PIN – Spieler konnten nicht gespeichert werden.</div>
+    {% endif %}
+
+    <!-- Team-Header -->
+    <div class="team-hero">
+      <div style="flex:1;min-width:0">
+        <div class="team-hero-field">{{ tournament.name }} &nbsp;·&nbsp; Feld {{ team.field_group }}</div>
+        <div class="team-hero-name">{{ team.name }}</div>
+      </div>
+      {% if pin_valid %}
+      <div class="team-pin-display">
+        <div class="pin-label">PIN</div>
+        <div class="pin-value">{{ pin }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Aktuelle Platzierung -->
+    {% if my_rank %}
+    <div class="my-rank-banner">
+      <div class="rank-number">{{ my_rank.rank }}.</div>
+      <div class="rank-details">
+        <div class="rank-label">Aktuelle Platzierung – Feld {{ team.field_group }}</div>
+        <div class="rank-detail-row">
+          <div class="rank-detail-item"><strong>{{ my_rank.points }}</strong> Punkte</div>
+          <div class="rank-detail-item"><strong>{{ my_rank.wins }}</strong> Siege / <strong>{{ my_rank.losses }}</strong> Niederlagen</div>
+          <div class="rank-detail-item">Differenz: <strong>{{ '+' if my_rank.diff > 0 else '' }}{{ my_rank.diff }}</strong></div>
+        </div>
+        {% if my_rank.promotes %}
+        <span class="badge badge-active" style="margin-top:.35rem"><span class="badge-dot"></span> Aufstieg</span>
+        {% else %}
+        <span class="badge badge-pending" style="margin-top:.35rem"><span class="badge-dot"></span> Abstieg</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Spieler eintragen -->
+    {% if pin_valid %}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Spielerliste eintragen</div>
+        <span class="badge badge-pending">max. {{ max_players }} Spieler</span>
+      </div>
+      <p style="font-size:.875rem;color:#7a7a7a;margin-bottom:1rem">
+        Bitte tragt alle Spieler mit Namen und Trikotnummer ein. Felder ohne Namen werden ignoriert.
+      </p>
+      <form method="post" action="/turnier/{{ tournament.slug }}/team/{{ team.id }}/spieler">
+        <input type="hidden" name="pin" value="{{ pin }}">
+        <div style="display:grid;gap:.6rem">
+          {% for i in range(1, max_players + 1) %}
+          {% set existing = team.players[i-1] if team.players and i <= team.players|length else none %}
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <span style="font-family:var(--font-head);font-size:1rem;font-weight:700;color:var(--gray-300);width:1.5rem;text-align:center;flex-shrink:0">{{ i }}</span>
+            <input type="number" name="spieler_nummer_{{ i }}"
+                   value="{{ existing.jersey_number if existing and existing.jersey_number is not none else '' }}"
+                   placeholder="Nr." min="1" max="99" inputmode="numeric"
+                   class="form-control" style="width:75px;flex-shrink:0;text-align:center;font-family:var(--font-head);font-weight:700;font-size:1rem">
+            <input type="text" name="spieler_name_{{ i }}"
+                   value="{{ existing.name if existing else '' }}"
+                   placeholder="Vorname Nachname" maxlength="80"
+                   class="form-control" style="flex:1">
+          </div>
+          {% endfor %}
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary btn-lg">💾 Spielerliste speichern</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Eingetragene Spieler anzeigen -->
+    {% if team.players %}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Aktuelle Spielerliste</div>
+        <span class="badge badge-active"><span class="badge-dot"></span>{{ team.players | length }} Spieler</span>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:60px;text-align:center">Nummer</th>
+              <th>Name</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for player in team.players %}
+            <tr>
+              <td style="text-align:center">
+                <span style="font-family:var(--font-head);font-size:1.1rem;font-weight:700;color:var(--red)">
+                  {{ player.jersey_number if player.jersey_number is not none else '–' }}
+                </span>
+              </td>
+              <td><strong>{{ player.name }}</strong></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Nicht eingeloggt: Spieler nur anzeigen -->
+    {% if team.players %}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Spielerliste</div>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:60px;text-align:center">Nummer</th>
+              <th>Name</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for player in team.players %}
+            <tr>
+              <td style="text-align:center">
+                <span style="font-family:var(--font-head);font-size:1.1rem;font-weight:700;color:var(--red)">
+                  {{ player.jersey_number if player.jersey_number is not none else '–' }}
+                </span>
+              </td>
+              <td><strong>{{ player.name }}</strong></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- Spielplan des Teams -->
+    <h2 class="section-title">Spielplan</h2>
+    {% if matches %}
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Uhrzeit</th>
+              <th>Feld</th>
+              <th>Runde</th>
+              <th>Gegner</th>
+              <th style="text-align:center">Ergebnis</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in matches %}
+            {% set opponent = (m.team_b.name if m.team_b else (m.team_b_placeholder or '?')) if m.team_a_id == team.id else (m.team_a.name if m.team_a else (m.team_a_placeholder or '?')) %}
+            <tr class="{% if m.status.value == 'active' %}match-active{% elif m.status.value == 'finished' %}match-finished{% endif %}">
+              <td class="match-time">{{ m.scheduled_time.strftime('%H:%M') if m.scheduled_time else '–' }}</td>
+              <td class="match-field">{{ m.field_number }}</td>
+              <td>
+                {% if m.round_type.value == 'prelim' %}<span class="tag">Vorrunde</span>
+                {% elif m.round_type.value == 'inter' %}<span class="tag">Zwischenrunde</span>
+                {% else %}<span class="tag">Platzierung</span>{% endif %}
+              </td>
+              <td class="match-teams"><strong>{{ opponent }}</strong></td>
+              <td class="match-score" style="text-align:center">
+                {% if m.score_a is not none and m.score_b is not none %}
+                  {% if m.team_a_id == team.id %}{{ m.score_a }} : {{ m.score_b }}
+                  {% else %}{{ m.score_b }} : {{ m.score_a }}{% endif %}
+                {% else %}–{% endif %}
+              </td>
+              <td>
+                <span class="badge badge-{{ m.status.value }}">
+                  <span class="badge-dot"></span>
+                  {% if m.status.value == 'pending' %}Ausstehend
+                  {% elif m.status.value == 'active' %}Läuft
+                  {% else %}Beendet{% endif %}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-state card">
+      <div class="empty-state-icon">📋</div>
+      <p>Spielplan wurde noch nicht generiert.</p>
+    </div>
+    {% endif %}
+
+    <!-- Vorrunden-Tabelle -->
+    <h2 class="section-title">Vorrunden-Tabelle – Feld {{ team.field_group }}</h2>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px;text-align:center">#</th>
+              <th>Team</th>
+              <th style="text-align:center">Gespielt</th>
+              <th style="text-align:center">Punkte</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in standings %}
+            <tr class="{% if entry.promotes %}promotes{% else %}relegates{% endif %}">
+              <td class="rank-col">{{ entry.rank }}</td>
+              <td>
+                {% if entry.team_id == team.id %}
+                <strong style="color:var(--red)">▶ {{ entry.team_name }}</strong>
+                {% else %}
+                {{ entry.team_name }}
+                {% endif %}
+              </td>
+              <td style="text-align:center">{{ entry.played }}</td>
+              <td class="points-col" style="text-align:center">{{ entry.points }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Blaulicht Völkerball – Feuerwehr Wolfurt{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <div class="page-hero-inner">
+      <h1 class="page-hero-title">Blaulicht Völkerball</h1>
+      <div class="page-hero-meta">
+        <span>🚒 Feuerwehr Wolfurt</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="page-content" style="padding-top:0">
+    <h2 class="section-title">Turniere</h2>
+
+    {% if tournaments %}
+    <div class="tournament-grid">
+      {% for t in tournaments %}
+      <article class="tournament-card">
+        <div class="tournament-card-banner"></div>
+        <div class="tournament-card-body">
+          <div class="tournament-card-name">{{ t.name }}</div>
+          <div class="tournament-card-date">📅 {{ t.date.strftime('%d.%m.%Y') }}</div>
+          {% if t.description %}
+          <p style="font-size:.875rem;color:#4a4a4a;margin-top:.25rem">{{ t.description[:120] }}{% if t.description|length > 120 %}…{% endif %}</p>
+          {% endif %}
+        </div>
+        <div class="tournament-card-footer">
+          {% if t.status.value == 'registration' %}
+            <span class="badge badge-registration"><span class="badge-dot"></span><span>Anmeldung offen</span></span>
+          {% elif t.status.value == 'active' %}
+            <span class="badge badge-active"><span class="badge-dot"></span><span>Läuft</span></span>
+          {% else %}
+            <span class="badge badge-finished"><span class="badge-dot"></span><span>Abgeschlossen</span></span>
+          {% endif %}
+          <a href="/turnier/{{ t.slug }}" class="btn btn-primary btn-sm">Zum Turnier</a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state-icon">🏐</div>
+      <p>Noch keine Turniere vorhanden.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

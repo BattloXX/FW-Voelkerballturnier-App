@@ -1,0 +1,48 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+  <h1 class="admin-page-title">Dashboard</h1>
+  <a href="/admin/turnier/neu" class="btn btn-primary">➕ Neues Turnier</a>
+</div>
+
+{% if tournaments %}
+<div style="display:grid;gap:1rem">
+  {% for t in tournaments %}
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">{{ t.name }}</div>
+        <div style="font-size:.85rem;color:#7a7a7a;margin-top:.2rem">
+          📅 {{ t.date.strftime('%d.%m.%Y') }} &nbsp;·&nbsp;
+          /turnier/{{ t.slug }}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+        {% if t.status.value == 'registration' %}
+          <span class="badge badge-registration"><span class="badge-dot"></span>Anmeldung</span>
+        {% elif t.status.value == 'active' %}
+          <span class="badge badge-active"><span class="badge-dot"></span>Läuft</span>
+        {% else %}
+          <span class="badge badge-finished"><span class="badge-dot"></span>Abgeschlossen</span>
+        {% endif %}
+        <a href="/admin/turnier/{{ t.id }}" class="btn btn-primary btn-sm">Verwalten</a>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:.5rem">
+      <a href="/admin/turnier/{{ t.id }}/bearbeiten" class="btn btn-secondary btn-sm">✏️ Bearbeiten</a>
+      <a href="/admin/turnier/{{ t.id }}/spielplan" class="btn btn-secondary btn-sm">📋 Spielplan</a>
+      <a href="/turnier/{{ t.slug }}" target="_blank" class="btn btn-secondary btn-sm">🌐 Ansicht</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state card">
+  <div class="empty-state-icon">🏐</div>
+  <p>Noch keine Turniere erstellt.</p>
+  <a href="/admin/turnier/neu" class="btn btn-primary" style="margin-top:1rem">Erstes Turnier erstellen</a>
+</div>
+{% endif %}
+{% endblock %}

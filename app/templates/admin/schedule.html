@@ -1,0 +1,100 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Spielplan – {{ tournament.name }}{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+  <div>
+    <h1 class="admin-page-title">Spielplan</h1>
+    <div style="font-size:.85rem;color:#7a7a7a">{{ tournament.name }}</div>
+  </div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+    <a href="/admin/turnier/{{ tournament.id }}" class="btn btn-secondary">← Zurück</a>
+    <a href="/turnier/{{ tournament.slug }}/spielplan" target="_blank" class="btn btn-secondary">🌐 Öffentlich</a>
+    <form method="post" action="/admin/turnier/{{ tournament.id }}/teams-einsetzen"
+          onsubmit="return confirm('Teams aus Vorrunden-Tabelle in Zwischenrunde und Platzierungsspiele einsetzen?')">
+      <button type="submit" class="btn btn-primary">⚡ Teams einsetzen</button>
+    </form>
+  </div>
+</div>
+
+{% set eingesetzt = request.query_params.get('eingesetzt') %}
+{% if eingesetzt %}
+{% set inter = request.query_params.get('inter', '0') %}
+{% set placement = request.query_params.get('placement', '0') %}
+{% set fehler = request.query_params.get('fehler', '0') %}
+<div class="alert {% if fehler|int > 0 %}alert-warning{% else %}alert-success{% endif %}" style="margin-bottom:1rem">
+  ✅ Teams eingesetzt: <strong>{{ inter }}</strong> Zwischenrundenspiele,
+  <strong>{{ placement }}</strong> Platzierungsspiele.
+  {% if fehler|int > 0 %} ⚠️ {{ fehler }} Platzhalter konnten nicht aufgelöst werden (Vorrunde noch nicht fertig?).{% endif %}
+</div>
+{% endif %}
+
+{% macro round_label(rt) %}
+  {% if rt.value == 'prelim' %}Vorrunde{% elif rt.value == 'inter' %}Zwischenrunde{% else %}Platzierungsspiele{% endif %}
+{% endmacro %}
+
+<div class="card" style="padding:0;overflow:hidden">
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Zeit</th>
+          <th>Runde</th>
+          <th>Feld</th>
+          <th>Team A</th>
+          <th style="text-align:center">Ergebnis</th>
+          <th>Team B</th>
+          <th>Status</th>
+          <th>Korrigieren</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in matches %}
+        <tr class="{% if m.status.value == 'active' %}match-active{% elif m.status.value == 'finished' %}match-finished{% endif %}">
+          <td style="color:#7a7a7a;font-size:.8rem">{{ m.sequence_number }}</td>
+          <td class="match-time">{{ m.scheduled_time.strftime('%H:%M') if m.scheduled_time else '–' }}</td>
+          <td><span class="tag">{{ round_label(m.round_type) }}</span></td>
+          <td class="match-field">{{ m.field_number }}</td>
+          <td class="match-teams">{{ m.team_a.name if m.team_a else (m.team_a_placeholder or '?') }}</td>
+          <td class="match-score" style="text-align:center">
+            {% if m.score_a is not none and m.score_b is not none %}
+              {{ m.score_a }} : {{ m.score_b }}
+              {% if m.players_remaining_a is not none %}<br><small style="color:#7a7a7a">({{ m.players_remaining_a }} : {{ m.players_remaining_b }} Spieler)</small>{% endif %}
+            {% else %}–{% endif %}
+          </td>
+          <td class="match-teams">{{ m.team_b.name if m.team_b else (m.team_b_placeholder or '?') }}</td>
+          <td>
+            <span class="badge badge-{{ m.status.value }}">
+              <span class="badge-dot"></span>
+              <span>{% if m.status.value == 'pending' %}Ausstehend{% elif m.status.value == 'active' %}Läuft{% else %}Beendet{% endif %}</span>
+            </span>
+          </td>
+          <td>
+            <form class="admin-result-form" data-match-id="{{ m.id }}" data-tournament-id="{{ tournament.id }}"
+                  style="display:flex;gap:.25rem;align-items:center;flex-wrap:wrap">
+              <input type="number" name="score_a" placeholder="S" min="0" max="1"
+                     value="{{ m.score_a if m.score_a is not none else '' }}"
+                     style="width:45px;padding:.3rem;text-align:center;border:1px solid #c8c8c8;border-radius:4px;font-size:.85rem">
+              <span style="color:#c8c8c8">:</span>
+              <input type="number" name="score_b" placeholder="S" min="0" max="1"
+                     value="{{ m.score_b if m.score_b is not none else '' }}"
+                     style="width:45px;padding:.3rem;text-align:center;border:1px solid #c8c8c8;border-radius:4px;font-size:.85rem">
+              <input type="number" name="players_remaining_a" placeholder="Spl.A" min="0"
+                     value="{{ m.players_remaining_a if m.players_remaining_a is not none else '' }}"
+                     style="width:55px;padding:.3rem;text-align:center;border:1px solid #c8c8c8;border-radius:4px;font-size:.85rem">
+              <input type="number" name="players_remaining_b" placeholder="Spl.B" min="0"
+                     value="{{ m.players_remaining_b if m.players_remaining_b is not none else '' }}"
+                     style="width:55px;padding:.3rem;text-align:center;border:1px solid #c8c8c8;border-radius:4px;font-size:.85rem">
+              <button type="submit" class="btn btn-primary btn-sm">✓</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" style="text-align:center;padding:2rem;color:#7a7a7a">Kein Spielplan generiert.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Benutzer{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+  <h1 class="admin-page-title">Benutzerverwaltung</h1>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">Neuen Benutzer anlegen</div></div>
+  <form method="post" action="/admin/benutzer/neu">
+    <div class="form-row form-row-3">
+      <div class="form-group">
+        <label class="form-label">Benutzername</label>
+        <input type="text" name="username" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Passwort</label>
+        <input type="password" name="password" class="form-control" required minlength="6">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rolle</label>
+        <select name="role" class="form-control">
+          {% for role in UserRole %}
+          <option value="{{ role.value }}">{{ role.value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Turnier (für Schiedsrichter)</label>
+      <select name="tournament_id" class="form-control">
+        <option value="">– Kein Turnier –</option>
+        {% for t in tournaments %}
+        <option value="{{ t.id }}">{{ t.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">➕ Benutzer erstellen</button>
+    </div>
+  </form>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden">
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Benutzername</th>
+          <th>Rolle</th>
+          <th>Turnier</th>
+          <th>Erstellt</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td><strong>{{ u.username }}</strong></td>
+          <td><span class="badge {% if u.role.value == 'superadmin' %}badge-active{% elif u.role.value == 'admin' %}badge-registration{% else %}badge-pending{% endif %}">
+            <span class="badge-dot"></span>{{ u.role.value }}
+          </span></td>
+          <td>{{ u.tournament.name if u.tournament else '–' }}</td>
+          <td style="font-size:.8rem;color:#7a7a7a">{{ u.created_at.strftime('%d.%m.%Y') }}</td>
+          <td style="display:flex;gap:.35rem;flex-wrap:wrap">
+            <form method="post" action="/admin/benutzer/{{ u.id }}/passwort"
+                  style="display:flex;gap:.35rem">
+              <input type="password" name="password" placeholder="Neues PW" minlength="6" required
+                     class="form-control" style="width:130px;padding:.35rem .6rem;font-size:.8rem">
+              <button type="submit" class="btn btn-secondary btn-sm">🔑 Ändern</button>
+            </form>
+            {% if u.id != user.id %}
+            <form method="post" action="/admin/benutzer/{{ u.id }}/loeschen"
+                  onsubmit="return confirm('Benutzer \'{{ u.username }}\' wirklich löschen?')">
+              <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+[Unit]
+Description=Völkerball Turnier-Manager
+After=network.target mariadb.service
+
+[Service]
+Type=simple
+User=fwwo-voelkerball
+WorkingDirectory=/home/fwwo-voelkerball/htdocs/voelkerball.fwwo.at
+Environment="PATH=/home/fwwo-voelkerball/htdocs/voelkerball.fwwo.at/venv/bin"
+EnvironmentFile=/home/fwwo-voelkerball/htdocs/voelkerball.fwwo.at/.env
+ExecStart=/home/fwwo-voelkerball/htdocs/voelkerball.fwwo.at/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8091 --workers 2
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

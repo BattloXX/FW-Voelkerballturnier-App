@@ -1,0 +1,139 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{{ tournament.name }} – Admin{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+  <div>
+    <h1 class="admin-page-title">{{ tournament.name }}</h1>
+    <div style="font-size:.85rem;color:#7a7a7a;margin-top:.2rem">
+      📅 {{ tournament.date.strftime('%d.%m.%Y') }} &nbsp;·&nbsp;
+      <a href="/turnier/{{ tournament.slug }}" target="_blank" style="color:#7a7a7a">
+        /turnier/{{ tournament.slug }} ↗
+      </a>
+    </div>
+  </div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+    <a href="/admin/turnier/{{ tournament.id }}/bearbeiten" class="btn btn-secondary">✏️ Bearbeiten</a>
+    <a href="/turnier/{{ tournament.slug }}" target="_blank" class="btn btn-secondary">🌐 Ansicht</a>
+  </div>
+</div>
+
+{% if error is defined and error %}
+<div class="alert alert-error">{{ error }}</div>
+{% endif %}
+
+<div class="admin-stats">
+  <div class="stat-card"><div class="stat-value">{{ teams | length }}</div><div class="stat-label">Teams</div></div>
+  <div class="stat-card"><div class="stat-value">{{ tournament.num_fields }}</div><div class="stat-label">Felder</div></div>
+  <div class="stat-card"><div class="stat-value">{{ match_count }}</div><div class="stat-label">Spiele gesamt</div></div>
+  <div class="stat-card"><div class="stat-value">{{ finished_count }}</div><div class="stat-label">Beendet</div></div>
+</div>
+
+<!-- Teams -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Teams</div>
+    <span class="badge badge-pending">{{ teams | length }} Teams</span>
+  </div>
+
+  <form method="post" action="/admin/turnier/{{ tournament.id }}/team/neu"
+        style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid #f0f0f0">
+    <input type="text" name="name" class="form-control" placeholder="Teamname" required
+           style="flex:1;min-width:160px">
+    <select name="field_group" class="form-control" style="width:auto;min-width:120px">
+      {% for f in range(1, tournament.num_fields + 1) %}
+      <option value="{{ f }}">Feld {{ f }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary">➕ Team hinzufügen</button>
+  </form>
+
+  {% if teams %}
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Teamname</th>
+          <th>Feld</th>
+          <th>PIN</th>
+          <th>Spieler</th>
+          <th>Teamseite</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for team in teams %}
+        <tr>
+          <td>
+            <form method="post" action="/admin/turnier/{{ tournament.id }}/team/{{ team.id }}/umbenennen"
+                  style="display:flex;gap:.35rem">
+              <input type="text" name="name" value="{{ team.name }}" class="form-control" style="min-width:120px;padding:.35rem .6rem;font-size:.875rem">
+              <button type="submit" class="btn btn-secondary btn-sm">✓</button>
+            </form>
+          </td>
+          <td><span class="tag">Feld {{ team.field_group }}</span></td>
+          <td><code style="font-size:1rem;font-weight:700;letter-spacing:.1em;color:var(--red)">{{ team.pin }}</code></td>
+          <td style="font-size:.85rem;color:#7a7a7a">
+            {% if team.players %}
+              {{ team.players | length }} Spieler
+              <span style="color:#c8c8c8">({% for p in team.players %}{% if p.jersey_number %}#{{ p.jersey_number }} {% endif %}{{ p.name }}{% if not loop.last %}, {% endif %}{% endfor %})</span>
+            {% else %}
+              <span style="color:#c8c8c8">keine Spieler</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="/turnier/{{ tournament.slug }}/team/{{ team.id }}?pin={{ team.pin }}"
+               target="_blank" class="btn btn-secondary btn-sm">🔗 Teamseite</a>
+          </td>
+          <td style="display:flex;gap:.35rem;flex-wrap:wrap">
+            <a href="/admin/turnier/{{ tournament.id }}/team/{{ team.id }}/pdf" class="btn btn-secondary btn-sm">📄 PDF</a>
+            <form method="post" action="/admin/turnier/{{ tournament.id }}/team/{{ team.id }}/loeschen"
+                  onsubmit="return confirm('Team \'{{ team.name }}\' wirklich löschen?')">
+              <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-actions">
+    <a href="/admin/turnier/{{ tournament.id }}/pdf/alle" class="btn btn-primary">📥 Alle Team-PDFs</a>
+  </div>
+  {% else %}
+  <div class="empty-state" style="padding:1.5rem">
+    <p>Noch keine Teams hinzugefügt.</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Spielplan -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Spielplan</div>
+    {% if match_count > 0 %}
+    <span class="badge badge-active">{{ match_count }} Spiele generiert</span>
+    {% endif %}
+  </div>
+
+  {% if match_count == 0 %}
+  <div class="alert alert-info" style="margin-bottom:1rem">
+    Spielplan noch nicht generiert. Fügen Sie zuerst alle Teams hinzu.
+  </div>
+  <form method="post" action="/admin/turnier/{{ tournament.id }}/spielplan/generieren">
+    <button type="submit" class="btn btn-primary btn-lg" {% if teams | length == 0 %}disabled{% endif %}>
+      ⚙️ Spielplan generieren
+    </button>
+  </form>
+  {% else %}
+  <div style="display:flex;flex-wrap:wrap;gap:.5rem">
+    <a href="/admin/turnier/{{ tournament.id }}/spielplan" class="btn btn-primary">📋 Spielplan verwalten</a>
+    <form method="post" action="/admin/turnier/{{ tournament.id }}/spielplan/loeschen"
+          onsubmit="return confirm('Spielplan löschen? Alle eingetragenen Ergebnisse gehen verloren!')">
+      <button type="submit" class="btn btn-danger">🗑 Spielplan löschen</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
