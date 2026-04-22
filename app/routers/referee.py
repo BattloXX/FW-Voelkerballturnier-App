@@ -107,6 +107,8 @@ def start_match(slug: str, match_id: int, request: Request, db: Session = Depend
         raise HTTPException(status_code=404)
 
     match.status = models.MatchStatus.active
+    match.players_remaining_a = None
+    match.players_remaining_b = None
     db.commit()
     return JSONResponse({"ok": True})
 
