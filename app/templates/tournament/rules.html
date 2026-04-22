@@ -1,34 +1,44 @@
 {% extends "base.html" %}
 {% block title %}Spielregeln – {{ tournament.name }}{% endblock %}
 
+{% block extra_head %}
+<style>
+  .rules-content h1,.rules-content h2,.rules-content h3 { font-family:'Lexend',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:-.02em;margin-top:1.5rem;margin-bottom:.5rem; }
+  .rules-content h1 { font-size:1.75rem;color:#ac001e;border-left:4px solid #ac001e;padding-left:.75rem; }
+  .rules-content h2 { font-size:1.25rem;color:#171c1e;border-left:3px solid #ac001e;padding-left:.6rem; }
+  .rules-content h3 { font-size:1.05rem;color:#171c1e; }
+  .rules-content p { margin-bottom:.75rem;line-height:1.6; }
+  .rules-content ul,.rules-content ol { margin:.5rem 0 .75rem 1.25rem;line-height:1.7; }
+  .rules-content li { margin-bottom:.2rem; }
+  .rules-content blockquote { border-left:3px solid #ac001e;padding:.5rem 1rem;background:#fff5f5;margin:.75rem 0;border-radius:0 .25rem .25rem 0; }
+  .rules-content strong { font-weight:700; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="page-hero">
-  <div class="container">
-    <div class="page-hero-inner">
-      <div class="breadcrumb" style="color:rgba(255,255,255,.6)">
-        <a href="/" style="color:rgba(255,255,255,.6)">Turniere</a>
-        <span class="breadcrumb-sep">›</span>
-        <a href="/turnier/{{ tournament.slug }}" style="color:rgba(255,255,255,.6)">{{ tournament.name }}</a>
-        <span class="breadcrumb-sep">›</span>
-        <span style="color:white">Spielregeln</span>
-      </div>
-      <h1 class="page-hero-title">Spielregeln</h1>
+<div class="bg-inverse-surface pb-10 pt-8">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="flex items-center gap-2 text-white/50 text-xs font-grotesk font-semibold uppercase tracking-widest mb-3">
+      <a href="/" class="hover:text-white/80 transition-colors">Turniere</a>
+      <span>›</span>
+      <a href="/turnier/{{ tournament.slug }}" class="hover:text-white/80 transition-colors">{{ tournament.name }}</a>
+      <span>›</span>
+      <span class="text-white/80">Spielregeln</span>
     </div>
+    <h1 class="font-lexend font-black text-white uppercase text-4xl tracking-tight">Spielregeln</h1>
   </div>
 </div>
 
-<div class="container">
-  <div class="page-content" style="padding-top:0">
-    <div class="card">
-      {% if rules_html %}
-      <div class="rules-content">{{ rules_html | safe }}</div>
-      {% else %}
-      <div class="empty-state">
-        <div class="empty-state-icon">📖</div>
-        <p>Noch keine Spielregeln hinterlegt.</p>
-      </div>
-      {% endif %}
-    </div>
+<div class="max-w-4xl mx-auto px-6 py-10">
+  {% if rules_html %}
+  <div class="bg-white border border-gray-200 rounded-xl p-8 shadow-sm rules-content text-on-surface">
+    {{ rules_html | safe }}
   </div>
+  {% else %}
+  <div class="flex flex-col items-center py-16 text-center">
+    <span class="material-symbols-outlined text-5xl text-gray-300 mb-4">menu_book</span>
+    <p class="text-secondary text-lg">Noch keine Spielregeln hinterlegt.</p>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

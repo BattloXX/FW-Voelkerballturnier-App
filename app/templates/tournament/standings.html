@@ -3,64 +3,71 @@
 {% block body_slug %}{{ tournament.slug }}{% endblock %}
 
 {% block content %}
-<div class="page-hero">
-  <div class="container">
-    <div class="page-hero-inner">
-      <div class="breadcrumb" style="color:rgba(255,255,255,.6)">
-        <a href="/" style="color:rgba(255,255,255,.6)">Turniere</a>
-        <span class="breadcrumb-sep">›</span>
-        <a href="/turnier/{{ tournament.slug }}" style="color:rgba(255,255,255,.6)">{{ tournament.name }}</a>
-        <span class="breadcrumb-sep">›</span>
-        <span style="color:white">Rangliste</span>
-      </div>
-      <h1 class="page-hero-title">Rangliste</h1>
-      <div class="page-hero-meta">
-        <span id="live-indicator" class="live-indicator" style="display:none"><span class="live-dot"></span> Live</span>
-      </div>
+<!-- Page Header -->
+<div class="bg-inverse-surface pb-10 pt-8">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="flex items-center gap-2 text-white/50 text-xs font-grotesk font-semibold uppercase tracking-widest mb-3">
+      <a href="/" class="hover:text-white/80 transition-colors">Turniere</a>
+      <span>›</span>
+      <a href="/turnier/{{ tournament.slug }}" class="hover:text-white/80 transition-colors">{{ tournament.name }}</a>
+      <span>›</span>
+      <span class="text-white/80">Rangliste</span>
+    </div>
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <h1 class="font-lexend font-black text-white uppercase text-4xl tracking-tight leading-none">Rangliste</h1>
+      <span id="live-indicator" class="hidden items-center gap-1.5 text-sm font-grotesk font-semibold uppercase tracking-wide text-primary">
+        <span class="w-2 h-2 rounded-full bg-primary" style="animation:pulse 1.5s infinite"></span>
+        Live
+      </span>
     </div>
   </div>
 </div>
 
-<div class="container">
-  <div class="page-content" style="padding-top:0">
+<div class="max-w-7xl mx-auto px-6 py-8 space-y-8">
 
-    <!-- Platzierungsspiele (Gesamtranking) -->
-    {% if placement_groups %}
-    <h2 class="section-title" style="color:var(--red)">🏆 Endrangliste</h2>
+  <!-- Endrangliste -->
+  {% if placement_groups %}
+  <section>
+    <h2 class="font-lexend font-bold text-3xl uppercase tracking-tight border-l-4 border-primary pl-4 mb-6 text-primary">Endrangliste</h2>
     {% for g in placement_groups %}
     {% set grp = placement_standings_by_group[g] %}
     {% if grp %}
     {% set base_rank = (g - 1) * (grp | length) + 1 %}
-    <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.5rem">
-      <div style="padding:.6rem 1rem;background:#f9f9f9;border-bottom:1px solid #f0f0f0;font-size:.8rem;font-weight:600;color:#7a7a7a;text-transform:uppercase;letter-spacing:.05em">
-        Platz {{ (g - 1) * (grp | length) + 1 }}–{{ g * (grp | length) }}
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm mb-4">
+      <div class="px-4 py-2.5 bg-surface-container-high border-b border-gray-100">
+        <span class="font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">
+          Platz {{ (g - 1) * (grp | length) + 1 }}–{{ g * (grp | length) }}
+        </span>
       </div>
-      <div class="table-wrapper">
-        <table>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
           <thead>
-            <tr>
-              <th style="width:40px;text-align:center">#</th>
-              <th>Team</th>
-              <th style="text-align:center">Sp</th>
-              <th style="text-align:center">S</th>
-              <th style="text-align:center">N</th>
-              <th style="text-align:center">Diff</th>
-              <th style="text-align:center">Pkt</th>
+            <tr class="border-b border-gray-100">
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary w-10 text-center">#</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Team</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Sp</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">S</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">N</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Diff</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-primary text-center">Pkt</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody class="divide-y divide-gray-100">
             {% for entry in grp %}
             <tr>
-              <td class="rank-col">
+              <td class="py-3 px-4 text-center font-grotesk font-bold text-on-surface">
                 {% set final_rank = (g - 1) * (grp | length) + entry.rank %}
                 {% if final_rank == 1 %}🥇{% elif final_rank == 2 %}🥈{% elif final_rank == 3 %}🥉{% else %}{{ final_rank }}{% endif %}
               </td>
-              <td><strong>{{ entry.team_name }}</strong>{% if entry.organization %}<br><span style="font-size:.75rem;color:#999;font-weight:400">{{ entry.organization }}</span>{% endif %}</td>
-              <td style="text-align:center">{{ entry.played }}</td>
-              <td style="text-align:center">{{ entry.wins }}</td>
-              <td style="text-align:center">{{ entry.losses }}</td>
-              <td style="text-align:center">{{ '+' if entry.diff > 0 else '' }}{{ entry.diff }}</td>
-              <td class="points-col" style="text-align:center">{{ entry.points }}</td>
+              <td class="py-3 px-4">
+                <span class="font-lexend font-bold text-on-surface">{{ entry.team_name }}</span>
+                {% if entry.organization %}<br><span class="text-xs text-secondary font-normal">{{ entry.organization }}</span>{% endif %}
+              </td>
+              <td class="py-3 px-4 text-center font-grotesk text-sm text-on-surface">{{ entry.played }}</td>
+              <td class="py-3 px-4 text-center font-grotesk text-sm text-on-surface">{{ entry.wins }}</td>
+              <td class="py-3 px-4 text-center font-grotesk text-sm text-on-surface">{{ entry.losses }}</td>
+              <td class="py-3 px-4 text-center font-grotesk text-sm text-secondary">{{ '+' if entry.diff > 0 else '' }}{{ entry.diff }}</td>
+              <td class="py-3 px-4 text-center font-grotesk font-bold text-primary">{{ entry.points }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -69,95 +76,111 @@
     </div>
     {% endif %}
     {% endfor %}
-    {% endif %}
+  </section>
+  {% endif %}
 
-    <!-- Zwischenrunde -->
-    {% if inter_groups %}
-    <h2 class="section-title">Zwischenrunde</h2>
+  <!-- Zwischenrunde -->
+  {% if inter_groups %}
+  <section>
+    <h2 class="font-lexend font-bold text-2xl uppercase tracking-tight border-l-4 border-primary pl-4 mb-5">Zwischenrunde</h2>
     {% for g in inter_groups %}
-    <h3 style="font-family:var(--font-head);font-size:1rem;color:#7a7a7a;margin:.5rem 0 .5rem;text-transform:uppercase;letter-spacing:.05em">Gruppe {{ g }}</h3>
-    <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.5rem">
-      <div class="table-wrapper">
-        <table>
+    <div class="mb-2">
+      <span class="font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Gruppe {{ g }}</span>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm mb-5">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
           <thead>
-            <tr>
-              <th style="width:40px;text-align:center">#</th>
-              <th>Team</th>
-              <th style="text-align:center">Sp</th>
-              <th style="text-align:center">S</th>
-              <th style="text-align:center">N</th>
-              <th style="text-align:center">Diff</th>
-              <th style="text-align:center">Pkt</th>
+            <tr class="bg-surface-container-high border-b border-gray-100">
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary w-10 text-center">#</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Team</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Sp</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">S</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">N</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Diff</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-primary text-center">Pkt</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody class="divide-y divide-gray-100">
             {% if inter_standings_by_group[g] %}
               {% for entry in inter_standings_by_group[g] %}
-              <tr>
-                <td class="rank-col">{{ entry.rank }}</td>
-                <td><strong>{{ entry.team_name }}</strong>{% if entry.organization %}<br><span style="font-size:.75rem;color:#999;font-weight:400">{{ entry.organization }}</span>{% endif %}</td>
-                <td style="text-align:center">{{ entry.played }}</td>
-                <td style="text-align:center">{{ entry.wins }}</td>
-                <td style="text-align:center">{{ entry.losses }}</td>
-                <td style="text-align:center">{{ '+' if entry.diff > 0 else '' }}{{ entry.diff }}</td>
-                <td class="points-col" style="text-align:center">{{ entry.points }}</td>
+              <tr class="hover:bg-surface-container-low transition-colors">
+                <td class="py-3 px-4 text-center font-grotesk font-bold text-on-surface">{{ entry.rank }}</td>
+                <td class="py-3 px-4">
+                  <span class="font-lexend font-bold text-on-surface">{{ entry.team_name }}</span>
+                  {% if entry.organization %}<br><span class="text-xs text-secondary font-normal">{{ entry.organization }}</span>{% endif %}
+                </td>
+                <td class="py-3 px-4 text-center font-grotesk text-sm">{{ entry.played }}</td>
+                <td class="py-3 px-4 text-center font-grotesk text-sm">{{ entry.wins }}</td>
+                <td class="py-3 px-4 text-center font-grotesk text-sm">{{ entry.losses }}</td>
+                <td class="py-3 px-4 text-center font-grotesk text-sm text-secondary">{{ '+' if entry.diff > 0 else '' }}{{ entry.diff }}</td>
+                <td class="py-3 px-4 text-center font-grotesk font-bold text-primary">{{ entry.points }}</td>
               </tr>
               {% endfor %}
             {% else %}
-              <tr><td colspan="7" style="text-align:center;color:#7a7a7a;padding:1.5rem">Noch keine Ergebnisse.</td></tr>
+              <tr><td colspan="7" class="py-8 text-center text-secondary">Noch keine Ergebnisse.</td></tr>
             {% endif %}
           </tbody>
         </table>
       </div>
     </div>
     {% endfor %}
-    {% endif %}
+  </section>
+  {% endif %}
 
-    <!-- Vorrunde -->
-    <h2 class="section-title">Vorrunde</h2>
-
-    <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-bottom:1rem;font-size:.875rem">
-      <span style="display:flex;align-items:center;gap:.4rem">
-        <span style="width:14px;height:14px;background:#e8f5e9;border:1px solid #2e7d32;border-radius:2px;display:inline-block"></span>
-        Aufstieg (Top {{ tournament.promotions_per_field }})
-      </span>
-      <span style="display:flex;align-items:center;gap:.4rem">
-        <span style="width:14px;height:14px;background:#ffebee;border:1px solid #c62828;border-radius:2px;display:inline-block"></span>
-        Abstieg
-      </span>
+  <!-- Vorrunde -->
+  <section>
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
+      <h2 class="font-lexend font-bold text-2xl uppercase tracking-tight border-l-4 border-primary pl-4">Vorrunde</h2>
+      <div class="flex gap-4 text-sm text-secondary">
+        <span class="flex items-center gap-1.5">
+          <span class="w-3 h-3 rounded-sm bg-green-100 border border-green-600 inline-block"></span>
+          Aufstieg (Top {{ tournament.promotions_per_field }})
+        </span>
+        <span class="flex items-center gap-1.5">
+          <span class="w-3 h-3 rounded-sm bg-red-50 border border-red-300 inline-block"></span>
+          Abstieg
+        </span>
+      </div>
     </div>
 
     {% for f in fields %}
-    <h3 style="font-family:var(--font-head);font-size:1rem;color:#7a7a7a;margin:.5rem 0 .5rem;text-transform:uppercase;letter-spacing:.05em">Feld {{ f }}</h3>
-    <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.5rem">
-      <div class="table-wrapper">
-        <table>
+    <div class="mb-2">
+      <span class="font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Feld {{ f }}</span>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm mb-5">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
           <thead>
-            <tr>
-              <th style="width:40px;text-align:center">#</th>
-              <th>Team</th>
-              <th style="text-align:center">Sp</th>
-              <th style="text-align:center">S</th>
-              <th style="text-align:center">N</th>
-              <th style="text-align:center">Diff</th>
-              <th style="text-align:center">Pkt</th>
+            <tr class="bg-surface-container-high border-b border-gray-100">
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary w-10 text-center">#</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Team</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Sp</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">S</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">N</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Diff</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-primary text-center">Pkt</th>
             </tr>
           </thead>
-          <tbody data-standings-field="{{ f }}">
+          <tbody data-standings-field="{{ f }}" class="divide-y divide-gray-100">
             {% if standings_by_field[f] %}
               {% for entry in standings_by_field[f] %}
-              <tr data-team-id="{{ entry.team_id }}" class="{% if entry.promotes %}promotes{% else %}relegates{% endif %}">
-                <td class="rank-col">{{ entry.rank }}</td>
-                <td><strong>{{ entry.team_name }}</strong>{% if entry.organization %}<br><span style="font-size:.75rem;color:#999;font-weight:400">{{ entry.organization }}</span>{% endif %}</td>
-                <td style="text-align:center">{{ entry.played }}</td>
-                <td style="text-align:center">{{ entry.wins }}</td>
-                <td style="text-align:center">{{ entry.losses }}</td>
-                <td style="text-align:center">{{ '+' if entry.diff > 0 else '' }}{{ entry.diff }}</td>
-                <td class="points-col" style="text-align:center">{{ entry.points }}</td>
+              <tr data-team-id="{{ entry.team_id }}"
+                  class="{% if entry.promotes %}promotes{% else %}relegates{% endif %} hover:bg-surface-container-low transition-colors">
+                <td class="py-3 px-4 text-center font-grotesk font-bold text-on-surface">{{ entry.rank }}</td>
+                <td class="py-3 px-4">
+                  <span class="font-lexend font-bold text-on-surface">{{ entry.team_name }}</span>
+                  {% if entry.organization %}<br><span class="text-xs text-secondary font-normal">{{ entry.organization }}</span>{% endif %}
+                </td>
+                <td class="py-3 px-4 text-center font-grotesk text-sm">{{ entry.played }}</td>
+                <td class="py-3 px-4 text-center font-grotesk text-sm">{{ entry.wins }}</td>
+                <td class="py-3 px-4 text-center font-grotesk text-sm">{{ entry.losses }}</td>
+                <td class="py-3 px-4 text-center font-grotesk text-sm text-secondary">{{ '+' if entry.diff > 0 else '' }}{{ entry.diff }}</td>
+                <td class="py-3 px-4 text-center font-grotesk font-bold text-primary">{{ entry.points }}</td>
               </tr>
               {% endfor %}
             {% else %}
-              <tr><td colspan="7" style="text-align:center;color:#7a7a7a;padding:1.5rem">Noch keine Ergebnisse eingetragen.</td></tr>
+              <tr><td colspan="7" class="py-8 text-center text-secondary">Noch keine Ergebnisse eingetragen.</td></tr>
             {% endif %}
           </tbody>
         </table>
@@ -165,10 +188,10 @@
     </div>
     {% endfor %}
 
-    <p style="font-size:.8rem;color:#7a7a7a;margin-top:1rem">
-      Punkte: {{ tournament.points_win }} für Sieg (mehr Spieler am Feld), {{ tournament.points_draw if tournament.points_draw is defined else 1 }} für Unentschieden, {{ tournament.points_loss }} für Niederlage &nbsp;|&nbsp;
-      Aufsteiger: Top {{ tournament.promotions_per_field }} pro Feld
+    <p class="text-xs text-secondary mt-2">
+      Punkte: {{ tournament.points_win }} für Sieg · {{ tournament.points_draw if tournament.points_draw is defined else 1 }} für Unentschieden · {{ tournament.points_loss }} für Niederlage &nbsp;|&nbsp; Aufsteiger: Top {{ tournament.promotions_per_field }} pro Feld
     </p>
-  </div>
+  </section>
+
 </div>
 {% endblock %}

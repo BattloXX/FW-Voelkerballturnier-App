@@ -1,54 +1,126 @@
 {% extends "base.html" %}
-
 {% block title %}Blaulicht Völkerball – Feuerwehr Wolfurt{% endblock %}
 
 {% block content %}
-<div class="page-hero">
-  <div class="container">
-    <div class="page-hero-inner">
-      <h1 class="page-hero-title">Blaulicht Völkerball</h1>
-      <div class="page-hero-meta">
-        <span>🚒 Feuerwehr Wolfurt</span>
-      </div>
-    </div>
+{% set active_t = tournaments | selectattr("status.value", "equalto", "active") | first | default(none) %}
+
+<!-- Hero -->
+<section class="relative bg-inverse-surface hero-clip overflow-hidden pb-16 pt-10">
+  <div class="absolute inset-0 opacity-10 pointer-events-none">
+    <div class="absolute inset-0" style="background:radial-gradient(ellipse at 30% 50%, #ac001e 0%, transparent 60%)"></div>
   </div>
-</div>
-
-<div class="container">
-  <div class="page-content" style="padding-top:0">
-    <h2 class="section-title">Turniere</h2>
-
-    {% if tournaments %}
-    <div class="tournament-grid">
-      {% for t in tournaments %}
-      <article class="tournament-card">
-        <div class="tournament-card-banner"></div>
-        <div class="tournament-card-body">
-          <div class="tournament-card-name">{{ t.name }}</div>
-          <div class="tournament-card-date">📅 {{ t.date.strftime('%d.%m.%Y') }}</div>
-          {% if t.description %}
-          <p style="font-size:.875rem;color:#4a4a4a;margin-top:.25rem">{{ t.description[:120] }}{% if t.description|length > 120 %}…{% endif %}</p>
-          {% endif %}
-        </div>
-        <div class="tournament-card-footer">
-          {% if t.status.value == 'registration' %}
-            <span class="badge badge-registration"><span class="badge-dot"></span><span>Anmeldung offen</span></span>
-          {% elif t.status.value == 'active' %}
-            <span class="badge badge-active"><span class="badge-dot"></span><span>Läuft</span></span>
-          {% else %}
-            <span class="badge badge-finished"><span class="badge-dot"></span><span>Abgeschlossen</span></span>
-          {% endif %}
-          <a href="/turnier/{{ t.slug }}" class="btn btn-primary btn-sm">Zum Turnier</a>
-        </div>
-      </article>
-      {% endfor %}
+  <div class="relative max-w-7xl mx-auto px-6 z-10">
+    {% if active_t %}
+    <span class="inline-flex items-center gap-2 bg-primary px-4 py-1 text-white rounded-2xl text-sm font-grotesk font-semibold uppercase tracking-wider mb-4">
+      <span class="w-2 h-2 bg-white rounded-full" style="animation:pulse 1.5s infinite"></span>
+      LÄUFT
+    </span>
+    <h1 class="font-lexend font-black text-white uppercase text-5xl tracking-tight leading-none mb-4">
+      {{ active_t.name }}
+    </h1>
+    <div class="flex flex-wrap gap-6 text-white/70 mb-6">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-xl">calendar_today</span>
+        <span class="font-grotesk text-sm font-semibold uppercase tracking-wide">{{ active_t.date.strftime('%d.%m.%Y') }}</span>
+      </div>
+      {% if active_t.num_fields %}
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-xl">sports_handball</span>
+        <span class="font-grotesk text-sm font-semibold uppercase tracking-wide">{{ active_t.num_fields }} Felder</span>
+      </div>
+      {% endif %}
     </div>
     {% else %}
-    <div class="empty-state">
-      <div class="empty-state-icon">🏐</div>
-      <p>Noch keine Turniere vorhanden.</p>
-    </div>
+    <h1 class="font-lexend font-black text-white uppercase tracking-tight leading-none mb-3" style="font-size:clamp(2rem,5vw,3.5rem)">
+      Blaulicht Völkerball
+    </h1>
+    <p class="text-white/60 font-grotesk text-sm uppercase tracking-widest">Feuerwehr Wolfurt</p>
     {% endif %}
   </div>
-</div>
+</section>
+
+<!-- Quick Actions (when active tournament) -->
+{% if active_t %}
+<section class="px-6 -mt-10 relative z-20 max-w-7xl mx-auto">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+    <a href="/turnier/{{ active_t.slug }}/spielplan"
+       class="bg-white border border-gray-200 p-6 flex flex-col gap-4 rounded-xl shadow-sm hover:border-primary transition-colors cursor-pointer group no-underline">
+      <div class="w-12 h-12 bg-on-secondary-fixed-variant rounded-xl flex items-center justify-center text-white group-hover:bg-primary transition-colors">
+        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">calendar_month</span>
+      </div>
+      <div>
+        <h3 class="font-lexend font-bold text-2xl uppercase text-on-surface">Spielplan</h3>
+        <p class="text-secondary text-sm mt-1">Alle Spiele mit Uhrzeiten und Ergebnissen</p>
+      </div>
+    </a>
+    <a href="/turnier/{{ active_t.slug }}/rangliste"
+       class="bg-white border border-gray-200 p-6 flex flex-col gap-4 rounded-xl shadow-sm hover:border-primary transition-colors cursor-pointer group no-underline">
+      <div class="w-12 h-12 bg-on-secondary-fixed-variant rounded-xl flex items-center justify-center text-white group-hover:bg-primary transition-colors">
+        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">leaderboard</span>
+      </div>
+      <div>
+        <h3 class="font-lexend font-bold text-2xl uppercase text-on-surface">Rangliste</h3>
+        <p class="text-secondary text-sm mt-1">Aktuelle Tabellenstände aller Gruppen</p>
+      </div>
+    </a>
+    <a href="/turnier/{{ active_t.slug }}/regeln"
+       class="bg-white border border-gray-200 p-6 flex flex-col gap-4 rounded-xl shadow-sm hover:border-primary transition-colors cursor-pointer group no-underline">
+      <div class="w-12 h-12 bg-on-secondary-fixed-variant rounded-xl flex items-center justify-center text-white group-hover:bg-primary transition-colors">
+        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">gavel</span>
+      </div>
+      <div>
+        <h3 class="font-lexend font-bold text-2xl uppercase text-on-surface">Spielregeln</h3>
+        <p class="text-secondary text-sm mt-1">Offizielles Regelwerk des Turniers</p>
+      </div>
+    </a>
+  </div>
+</section>
+{% endif %}
+
+<!-- Tournaments List -->
+<section class="max-w-7xl mx-auto px-6 py-12">
+  {% if not active_t %}
+  <h2 class="font-lexend font-bold text-3xl uppercase tracking-tight border-l-4 border-primary pl-4 mb-8">Turniere</h2>
+  {% else %}
+  <h2 class="font-lexend font-bold text-2xl uppercase tracking-tight border-l-4 border-primary pl-4 mb-6 mt-2">Alle Turniere</h2>
+  {% endif %}
+
+  {% if tournaments %}
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    {% for t in tournaments %}
+    <article class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-primary transition-colors group shadow-sm">
+      <div class="h-1.5 bg-primary"></div>
+      <div class="p-5">
+        <div class="font-lexend font-bold text-xl text-on-surface mb-1">{{ t.name }}</div>
+        <div class="flex items-center gap-2 text-secondary text-sm mb-3">
+          <span class="material-symbols-outlined text-base">calendar_today</span>
+          {{ t.date.strftime('%d.%m.%Y') }}
+        </div>
+        {% if t.description %}
+        <p class="text-sm text-secondary mb-3 leading-relaxed">{{ t.description[:120] }}{% if t.description|length > 120 %}…{% endif %}</p>
+        {% endif %}
+        <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+          {% if t.status.value == 'registration' %}
+            <span class="badge-pending"><span class="badge-dot"></span>Anmeldung offen</span>
+          {% elif t.status.value == 'active' %}
+            <span class="badge-active"><span class="badge-dot"></span>Läuft</span>
+          {% else %}
+            <span class="badge-finished"><span class="badge-dot"></span>Abgeschlossen</span>
+          {% endif %}
+          <a href="/turnier/{{ t.slug }}"
+             class="px-4 py-1.5 bg-primary text-white text-sm font-grotesk font-semibold uppercase tracking-wide rounded hover:bg-red-800 transition-colors no-underline">
+            Zum Turnier
+          </a>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="flex flex-col items-center py-16 text-center">
+    <span class="text-6xl mb-4">🏐</span>
+    <p class="text-secondary text-lg">Noch keine Turniere vorhanden.</p>
+  </div>
+  {% endif %}
+</section>
 {% endblock %}

@@ -70,6 +70,8 @@ class Team(Base):
     field_group = Column(Integer, nullable=False)
     pin = Column(String(10), nullable=False)
     players_locked = Column(Boolean, default=False)
+    contact_person = Column(String(200), nullable=True)
+    contact_phone = Column(String(50), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
 
     tournament = relationship("Tournament", back_populates="teams")

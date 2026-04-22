@@ -10,7 +10,8 @@ from app.templates_config import templates
 
 router = APIRouter()
 
-ALLOWED_TAGS = ["p", "br", "b", "strong", "em", "i", "ul", "ol", "li", "h1", "h2", "h3", "h4", "blockquote"]
+ALLOWED_TAGS = ["p", "br", "b", "strong", "em", "i", "u", "s", "ul", "ol", "li", "h1", "h2", "h3", "h4", "blockquote", "span", "a"]
+ALLOWED_ATTRS = {"a": ["href", "target"], "span": ["class", "style"]}
 
 
 @router.post("/team/login")
@@ -133,8 +134,12 @@ def tournament_rules(slug: str, request: Request, db: Session = Depends(get_db))
 
     rules_html = ""
     if t.rules_text:
-        raw_html = markdown.markdown(t.rules_text)
-        rules_html = bleach.clean(raw_html, tags=ALLOWED_TAGS, strip=True)
+        stripped = t.rules_text.strip()
+        if stripped.startswith("<") and not stripped.startswith("<!--"):
+            rules_html = bleach.clean(stripped, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS, strip=True)
+        else:
+            raw_html = markdown.markdown(stripped)
+            rules_html = bleach.clean(raw_html, tags=ALLOWED_TAGS, strip=True)
 
     return templates.TemplateResponse("tournament/rules.html", {
         "request": request,

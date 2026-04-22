@@ -3,66 +3,90 @@
 {% block body_slug %}{{ tournament.slug }}{% endblock %}
 
 {% block content %}
-<div class="page-hero">
-  <div class="container">
-    <div class="page-hero-inner">
-      <div class="breadcrumb" style="color:rgba(255,255,255,.6)">
-        <a href="/" style="color:rgba(255,255,255,.6)">Turniere</a>
-        <span class="breadcrumb-sep">›</span>
-        <span style="color:white">{{ tournament.name }}</span>
-      </div>
-      <h1 class="page-hero-title">{{ tournament.name }}</h1>
-      <div class="page-hero-meta">
-        <span>📅 {{ tournament.date.strftime('%d.%m.%Y') }}</span>
-        {% if tournament.num_fields %}<span>⚽ {{ tournament.num_fields }} Felder</span>{% endif %}
-        {% if tournament.status.value == 'registration' %}
-          <span class="badge badge-registration"><span class="badge-dot"></span>Anmeldung offen</span>
-        {% elif tournament.status.value == 'active' %}
-          <span class="badge badge-active"><span class="badge-dot"></span>Läuft</span>
-        {% else %}
-          <span class="badge badge-finished"><span class="badge-dot"></span>Abgeschlossen</span>
-        {% endif %}
-      </div>
-      <div class="page-hero-actions">
-        <a href="/turnier/{{ tournament.slug }}/spielplan" class="btn">📋 Spielplan</a>
-        <a href="/turnier/{{ tournament.slug }}/rangliste" class="btn">🏆 Rangliste</a>
-        <a href="/turnier/{{ tournament.slug }}/regeln" class="btn">📖 Spielregeln</a>
-      </div>
-    </div>
+<!-- Hero -->
+<section class="relative bg-inverse-surface hero-clip overflow-hidden pb-16 pt-10">
+  <div class="absolute inset-0 opacity-10 pointer-events-none">
+    <div class="absolute inset-0" style="background:radial-gradient(ellipse at 30% 50%, #ac001e 0%, transparent 60%)"></div>
   </div>
-</div>
-
-<div class="container">
-  <div class="page-content" style="padding-top:0">
-    {% if tournament.description %}
-    <div class="card">
-      <p>{{ tournament.description }}</p>
+  <div class="relative max-w-7xl mx-auto px-6 z-10">
+    <div class="flex items-center gap-2 text-white/50 text-xs font-grotesk font-semibold uppercase tracking-widest mb-3">
+      <a href="/" class="hover:text-white/80 transition-colors">Turniere</a>
+      <span>›</span>
+      <span class="text-white/80">{{ tournament.name }}</span>
     </div>
+    {% if tournament.status.value == 'active' %}
+    <span class="inline-flex items-center gap-2 bg-primary px-4 py-1 text-white rounded-2xl text-sm font-grotesk font-semibold uppercase tracking-wider mb-4">
+      <span class="w-2 h-2 bg-white rounded-full" style="animation:pulse 1.5s infinite"></span>
+      LÄUFT
+    </span>
+    {% elif tournament.status.value == 'registration' %}
+    <span class="inline-flex items-center gap-2 bg-yellow-500 px-4 py-1 text-white rounded-2xl text-sm font-grotesk font-semibold uppercase tracking-wider mb-4">
+      Anmeldung offen
+    </span>
+    {% else %}
+    <span class="inline-flex items-center gap-2 bg-gray-500 px-4 py-1 text-white rounded-2xl text-sm font-grotesk font-semibold uppercase tracking-wider mb-4">
+      Abgeschlossen
+    </span>
     {% endif %}
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem">
-      <a href="/turnier/{{ tournament.slug }}/spielplan" style="text-decoration:none">
-        <div class="card" style="text-align:center;cursor:pointer;transition:box-shadow .18s">
-          <div style="font-size:2.5rem;margin-bottom:.5rem">📋</div>
-          <div class="card-title">Spielplan</div>
-          <p style="font-size:.875rem;color:#7a7a7a;margin-top:.35rem">Alle Spiele mit Uhrzeiten und Ergebnissen</p>
-        </div>
-      </a>
-      <a href="/turnier/{{ tournament.slug }}/rangliste" style="text-decoration:none">
-        <div class="card" style="text-align:center;cursor:pointer">
-          <div style="font-size:2.5rem;margin-bottom:.5rem">🏆</div>
-          <div class="card-title">Rangliste</div>
-          <p style="font-size:.875rem;color:#7a7a7a;margin-top:.35rem">Aktuelle Tabellenstände aller Gruppen</p>
-        </div>
-      </a>
-      <a href="/turnier/{{ tournament.slug }}/regeln" style="text-decoration:none">
-        <div class="card" style="text-align:center;cursor:pointer">
-          <div style="font-size:2.5rem;margin-bottom:.5rem">📖</div>
-          <div class="card-title">Spielregeln</div>
-          <p style="font-size:.875rem;color:#7a7a7a;margin-top:.35rem">Offizielle Regelwerk des Turniers</p>
-        </div>
-      </a>
+    <h1 class="font-lexend font-black text-white uppercase tracking-tight leading-none mb-4" style="font-size:clamp(2rem,4vw,3rem)">
+      {{ tournament.name }}
+    </h1>
+    <div class="flex flex-wrap gap-6 text-white/70">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-xl">calendar_today</span>
+        <span class="font-grotesk text-sm font-semibold uppercase tracking-wide">{{ tournament.date.strftime('%d.%m.%Y') }}</span>
+      </div>
+      {% if tournament.num_fields %}
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-xl">sports_handball</span>
+        <span class="font-grotesk text-sm font-semibold uppercase tracking-wide">{{ tournament.num_fields }} Felder</span>
+      </div>
+      {% endif %}
     </div>
   </div>
-</div>
+</section>
+
+<!-- Quick Actions -->
+<section class="px-6 -mt-10 relative z-20 max-w-7xl mx-auto mb-12">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+    <a href="/turnier/{{ tournament.slug }}/spielplan"
+       class="bg-white border border-gray-200 p-6 flex flex-col gap-4 rounded-xl shadow-sm hover:border-primary transition-colors group no-underline">
+      <div class="w-12 h-12 bg-on-secondary-fixed-variant rounded-xl flex items-center justify-center text-white group-hover:bg-primary transition-colors">
+        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">calendar_month</span>
+      </div>
+      <div>
+        <h3 class="font-lexend font-bold text-2xl uppercase text-on-surface">Spielplan</h3>
+        <p class="text-secondary text-sm mt-1">Alle Spiele mit Uhrzeiten und Ergebnissen</p>
+      </div>
+    </a>
+    <a href="/turnier/{{ tournament.slug }}/rangliste"
+       class="bg-white border border-gray-200 p-6 flex flex-col gap-4 rounded-xl shadow-sm hover:border-primary transition-colors group no-underline">
+      <div class="w-12 h-12 bg-on-secondary-fixed-variant rounded-xl flex items-center justify-center text-white group-hover:bg-primary transition-colors">
+        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">leaderboard</span>
+      </div>
+      <div>
+        <h3 class="font-lexend font-bold text-2xl uppercase text-on-surface">Rangliste</h3>
+        <p class="text-secondary text-sm mt-1">Aktuelle Tabellenstände aller Gruppen</p>
+      </div>
+    </a>
+    <a href="/turnier/{{ tournament.slug }}/regeln"
+       class="bg-white border border-gray-200 p-6 flex flex-col gap-4 rounded-xl shadow-sm hover:border-primary transition-colors group no-underline">
+      <div class="w-12 h-12 bg-on-secondary-fixed-variant rounded-xl flex items-center justify-center text-white group-hover:bg-primary transition-colors">
+        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">gavel</span>
+      </div>
+      <div>
+        <h3 class="font-lexend font-bold text-2xl uppercase text-on-surface">Spielregeln</h3>
+        <p class="text-secondary text-sm mt-1">Offizielles Regelwerk des Turniers</p>
+      </div>
+    </a>
+  </div>
+</section>
+
+{% if tournament.description %}
+<section class="max-w-7xl mx-auto px-6 pb-12">
+  <div class="bg-white border border-gray-200 rounded-xl p-6">
+    <p class="text-secondary leading-relaxed">{{ tournament.description }}</p>
+  </div>
+</section>
+{% endif %}
 {% endblock %}

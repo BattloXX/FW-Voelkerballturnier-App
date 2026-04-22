@@ -21,7 +21,8 @@ router = APIRouter(prefix="/admin")
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "static/uploads")
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8001")
 
-ALLOWED_TAGS = ["p", "br", "b", "strong", "em", "i", "ul", "ol", "li", "h1", "h2", "h3", "h4", "blockquote"]
+ALLOWED_TAGS = ["p", "br", "b", "strong", "em", "i", "u", "s", "ul", "ol", "li", "h1", "h2", "h3", "h4", "blockquote", "span", "a"]
+ALLOWED_ATTRS = {"a": ["href", "target"], "span": ["class", "style"]}
 
 
 def _generate_pin() -> str:
@@ -260,6 +261,8 @@ def add_team(
     request: Request,
     name: str = Form(...),
     organization: str = Form(""),
+    contact_person: str = Form(""),
+    contact_phone: str = Form(""),
     field_group: int = Form(...),
     db: Session = Depends(get_db)
 ):
@@ -271,6 +274,8 @@ def add_team(
         tournament_id=tournament_id,
         name=name.strip(),
         organization=organization.strip() or None,
+        contact_person=contact_person.strip() or None,
+        contact_phone=contact_phone.strip() or None,
         field_group=field_group,
         pin=_generate_pin(),
     )
@@ -298,6 +303,8 @@ def rename_team_admin(
     request: Request,
     name: str = Form(...),
     organization: str = Form(""),
+    contact_person: str = Form(""),
+    contact_phone: str = Form(""),
     db: Session = Depends(get_db)
 ):
     user = _get_admin_user(request, db)
@@ -307,6 +314,8 @@ def rename_team_admin(
     if team:
         team.name = name.strip()
         team.organization = organization.strip() or None
+        team.contact_person = contact_person.strip() or None
+        team.contact_phone = contact_phone.strip() or None
         db.commit()
     return RedirectResponse(url=f"/admin/turnier/{tournament_id}", status_code=303)
 

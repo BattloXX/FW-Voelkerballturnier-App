@@ -117,6 +117,16 @@ def _team_page_story(team: models.Team, tournament: models.Tournament, matches: 
         Spacer(1, 0.2 * cm),
         Paragraph(f"Datum: {date_str}", meta_s),
         Paragraph(f"Gruppe: Feld {team.field_group}", meta_s),
+    ]
+    if getattr(team, "contact_person", None):
+        contact_s = ParagraphStyle("TC", fontName="Helvetica", fontSize=10,
+                                   textColor=FW_DARK, alignment=TA_LEFT, leading=14, spaceBefore=4)
+        left.append(Paragraph(f"Ansprechpartner: {team.contact_person}", contact_s))
+    if getattr(team, "contact_phone", None):
+        contact_s = ParagraphStyle("TP", fontName="Helvetica", fontSize=10,
+                                   textColor=FW_DARK, alignment=TA_LEFT, leading=14)
+        left.append(Paragraph(f"Telefon: {team.contact_phone}", contact_s))
+    left += [
         Spacer(1, 0.3 * cm),
         Paragraph("EUER PIN", pin_lbl_s),
         Paragraph(team.pin, pin_val_s),
@@ -124,10 +134,14 @@ def _team_page_story(team: models.Team, tournament: models.Tournament, matches: 
 
     qr_buf = _make_qr(url)
     qr_img = Image(qr_buf, width=5.5 * cm, height=5.5 * cm)
+    qr_note_s = ParagraphStyle("QN", fontName="Helvetica-Bold", fontSize=8,
+                               textColor=FW_RED, alignment=TA_CENTER, leading=11, spaceAfter=2)
     right = [
         qr_img,
         Paragraph(f"Team-ID: {team.id}", qr_id_s),
         Paragraph("QR-Code scannen für Spielplan", qr_hint_s),
+        Spacer(1, 0.3 * cm),
+        Paragraph("▶ Spielernamen über QR-Code eintragen!", qr_note_s),
     ]
 
     info_tbl = Table([[left, right]], colWidths=[11 * cm, 7 * cm])

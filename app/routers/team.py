@@ -37,6 +37,7 @@ def team_self_service(slug: str, team_id: int, pin: str, request: Request, db: S
 
     saved = request.query_params.get("saved")
     saved_org = request.query_params.get("saved_org")
+    saved_contact = request.query_params.get("saved_contact")
     error = request.query_params.get("error")
 
     return templates.TemplateResponse("team/self_service.html", {
@@ -51,6 +52,7 @@ def team_self_service(slug: str, team_id: int, pin: str, request: Request, db: S
         "max_players": MAX_PLAYERS,
         "saved": saved,
         "saved_org": saved_org,
+        "saved_contact": saved_contact,
         "error": error,
     })
 
@@ -110,6 +112,38 @@ async def save_players(
     db.commit()
     return RedirectResponse(
         url=f"/turnier/{slug}/team/{team_id}?pin={pin}&saved={count}",
+        status_code=303
+    )
+
+
+@router.post("/turnier/{slug}/team/{team_id}/kontakt", response_class=HTMLResponse)
+async def save_contact(
+    slug: str,
+    team_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    t = db.query(models.Tournament).filter(models.Tournament.slug == slug).first()
+    if not t:
+        raise HTTPException(status_code=404)
+    team = db.query(models.Team).filter(
+        models.Team.id == team_id,
+        models.Team.tournament_id == t.id
+    ).first()
+    if not team:
+        raise HTTPException(status_code=404)
+    form = await request.form()
+    pin = form.get("pin", "")
+    if team.pin != pin:
+        return RedirectResponse(
+            url=f"/turnier/{slug}/team/{team_id}?pin={pin}&error=pin",
+            status_code=303
+        )
+    team.contact_person = form.get("contact_person", "").strip() or None
+    team.contact_phone = form.get("contact_phone", "").strip() or None
+    db.commit()
+    return RedirectResponse(
+        url=f"/turnier/{slug}/team/{team_id}?pin={pin}&saved_contact=1",
         status_code=303
     )
 

@@ -2,255 +2,345 @@
 {% block title %}{{ team.name }} – {{ tournament.name }}{% endblock %}
 
 {% block content %}
-<div class="container">
-  <div class="page-content">
+<div class="max-w-4xl mx-auto px-6 py-8">
 
-    {% if not pin_valid %}
-    <div class="alert alert-error">❌ Ungültiger PIN. Bitte den PIN vom Team-Ausdruck verwenden.</div>
-    {% endif %}
+  <!-- Alerts -->
+  {% if not pin_valid %}
+  <div class="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-4 font-lexend text-sm">
+    <span class="material-symbols-outlined text-xl">error</span>
+    Ungültiger PIN. Bitte den PIN vom Team-Ausdruck verwenden.
+  </div>
+  {% endif %}
+  {% if saved is not none and saved %}
+  <div class="flex items-center gap-3 bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 mb-4 font-lexend text-sm">
+    <span class="material-symbols-outlined text-xl">check_circle</span>
+    {{ saved }} Spieler erfolgreich eingereicht. Die Liste ist jetzt gesperrt.
+  </div>
+  {% endif %}
+  {% if saved_contact %}
+  <div class="flex items-center gap-3 bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 mb-4 font-lexend text-sm">
+    <span class="material-symbols-outlined text-xl">check_circle</span>
+    Kontaktdaten gespeichert.
+  </div>
+  {% endif %}
+  {% if error == 'pin' %}
+  <div class="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-4 font-lexend text-sm">
+    <span class="material-symbols-outlined text-xl">error</span>
+    Falscher PIN – konnte nicht gespeichert werden.
+  </div>
+  {% elif error == 'locked' %}
+  <div class="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-4 font-lexend text-sm">
+    <span class="material-symbols-outlined text-xl">lock</span>
+    Die Spielerliste wurde bereits eingereicht und kann nicht mehr geändert werden.
+  </div>
+  {% endif %}
 
-    {% if saved is not none and saved %}
-    <div class="alert alert-success">✅ {{ saved }} Spieler erfolgreich eingereicht. Die Liste ist jetzt gesperrt.</div>
-    {% endif %}
-
-    {% if error == 'pin' %}
-    <div class="alert alert-error">❌ Falscher PIN – konnte nicht gespeichert werden.</div>
-    {% elif error == 'locked' %}
-    <div class="alert alert-error">❌ Die Spielerliste wurde bereits eingereicht und kann nicht mehr geändert werden.</div>
-    {% endif %}
-
-    <!-- Team-Header -->
-    <div class="team-hero">
-      <div style="flex:1;min-width:0">
-        <div class="team-hero-field">{{ tournament.name }} &nbsp;·&nbsp; Feld {{ team.field_group }}</div>
-        <div class="team-hero-name">{{ team.name }}</div>
+  <!-- Team Hero Card -->
+  <div class="bg-primary rounded-xl p-6 mb-6 relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10 pointer-events-none" style="background:radial-gradient(ellipse at 80% 50%, #fff 0%, transparent 60%)"></div>
+    <div class="relative flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+      <div>
+        <div class="text-white/60 font-grotesk text-xs uppercase tracking-widest mb-1">
+          {{ tournament.name }} · Feld {{ team.field_group }}
+        </div>
+        <h1 class="font-lexend font-black text-white text-3xl uppercase tracking-tight leading-none mb-1">{{ team.name }}</h1>
         {% if team.organization %}
-        <div style="font-size:.95rem;color:rgba(255,255,255,.75);margin-top:.2rem">{{ team.organization }}</div>
+        <div class="text-white/70 font-lexend text-sm mt-0.5">{{ team.organization }}</div>
+        {% endif %}
+        {% if team.contact_person %}
+        <div class="flex items-center gap-1.5 text-white/60 text-xs mt-2 font-grotesk">
+          <span class="material-symbols-outlined text-sm">person</span>
+          {{ team.contact_person }}{% if team.contact_phone %} · {{ team.contact_phone }}{% endif %}
+        </div>
         {% endif %}
       </div>
       {% if pin_valid %}
-      <div class="team-pin-display">
-        <div class="pin-label">PIN</div>
-        <div class="pin-value">{{ pin }}</div>
+      <div class="bg-white/10 rounded-xl px-5 py-3 text-center flex-shrink-0">
+        <div class="text-white/50 font-grotesk text-xs uppercase tracking-widest mb-1">PIN</div>
+        <div class="font-grotesk font-black text-white text-4xl tracking-wider">{{ pin }}</div>
       </div>
       {% endif %}
     </div>
+  </div>
 
-    <!-- Aktuelle Platzierung -->
-    {% if my_rank %}
-    <div class="my-rank-banner">
-      <div class="rank-number">{{ my_rank.rank }}.</div>
-      <div class="rank-details">
-        <div class="rank-label">Aktuelle Platzierung – Feld {{ team.field_group }}</div>
-        <div class="rank-detail-row">
-          <div class="rank-detail-item"><strong>{{ my_rank.points }}</strong> Punkte</div>
-          <div class="rank-detail-item"><strong>{{ my_rank.wins }}</strong> Siege / <strong>{{ my_rank.losses }}</strong> Niederlagen</div>
-          <div class="rank-detail-item">Differenz: <strong>{{ '+' if my_rank.diff > 0 else '' }}{{ my_rank.diff }}</strong></div>
+  <!-- Current Rank -->
+  {% if my_rank %}
+  <div class="bg-white border border-gray-200 rounded-xl p-5 mb-6 shadow-sm">
+    <div class="flex items-center gap-5">
+      <div class="w-16 h-16 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
+        <span class="font-lexend font-black text-white text-3xl">{{ my_rank.rank }}</span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="font-grotesk text-xs text-secondary uppercase tracking-widest mb-2">Aktuelle Platzierung – Feld {{ team.field_group }}</div>
+        <div class="flex flex-wrap gap-4">
+          <div>
+            <span class="font-grotesk font-bold text-2xl text-primary">{{ my_rank.points }}</span>
+            <span class="text-secondary text-sm ml-1">Pkt</span>
+          </div>
+          <div>
+            <span class="font-grotesk font-bold text-xl text-on-surface">{{ my_rank.wins }}</span>
+            <span class="text-secondary text-sm ml-1">Siege</span>
+          </div>
+          <div>
+            <span class="font-grotesk font-bold text-xl text-on-surface">{{ my_rank.losses }}</span>
+            <span class="text-secondary text-sm ml-1">Niederl.</span>
+          </div>
+          <div>
+            <span class="font-grotesk font-bold text-xl {% if my_rank.diff > 0 %}text-green-600{% elif my_rank.diff < 0 %}text-red-600{% else %}text-on-surface{% endif %}">{{ '+' if my_rank.diff > 0 else '' }}{{ my_rank.diff }}</span>
+            <span class="text-secondary text-sm ml-1">Diff</span>
+          </div>
         </div>
+      </div>
+      <div class="flex-shrink-0">
         {% if my_rank.promotes %}
-        <span class="badge badge-active" style="margin-top:.35rem"><span class="badge-dot"></span> Aufstieg</span>
+        <span class="inline-flex items-center gap-1.5 bg-green-100 text-green-700 border border-green-200 px-3 py-1.5 rounded font-grotesk text-xs font-bold uppercase tracking-wide">
+          <span class="material-symbols-outlined text-sm">arrow_upward</span>Aufstieg
+        </span>
         {% else %}
-        <span class="badge badge-pending" style="margin-top:.35rem"><span class="badge-dot"></span> Abstieg</span>
+        <span class="inline-flex items-center gap-1.5 bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded font-grotesk text-xs font-bold uppercase tracking-wide">
+          <span class="material-symbols-outlined text-sm">arrow_downward</span>Abstieg
+        </span>
         {% endif %}
       </div>
     </div>
-    {% endif %}
+  </div>
+  {% endif %}
 
-    <!-- 1. Spielplan -->
-    <h2 class="section-title">Spielplan</h2>
-    {% if matches %}
-    <div class="card" style="padding:0;overflow:hidden">
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Uhrzeit</th>
-              <th>Feld</th>
-              <th>Runde</th>
-              <th>Gegner</th>
-              <th style="text-align:center">Ergebnis</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for m in matches %}
-            {% set opponent = (m.team_b.name if m.team_b else (m.team_b_placeholder or '?')) if m.team_a_id == team.id else (m.team_a.name if m.team_a else (m.team_a_placeholder or '?')) %}
-            <tr class="{% if m.status.value == 'active' %}match-active{% elif m.status.value == 'finished' %}match-finished{% endif %}">
-              <td class="match-time">{{ m.scheduled_time.strftime('%H:%M') if m.scheduled_time else '–' }}</td>
-              <td class="match-field">{{ m.field_number }}</td>
-              <td>
-                {% if m.round_type.value == 'prelim' %}<span class="tag">Vorrunde</span>
-                {% elif m.round_type.value == 'inter' %}<span class="tag">Zwischenrunde</span>
-                {% else %}<span class="tag">Platzierung</span>{% endif %}
-              </td>
-              <td class="match-teams"><strong>{{ opponent }}</strong></td>
-              <td class="match-score" style="text-align:center">
-                {% if m.score_a is not none and m.score_b is not none %}
-                  {% if m.team_a_id == team.id %}{{ m.score_a }} : {{ m.score_b }}
-                  {% else %}{{ m.score_b }} : {{ m.score_a }}{% endif %}
-                {% else %}–{% endif %}
-              </td>
-              <td>
-                <span class="badge badge-{{ m.status.value }}">
-                  <span class="badge-dot"></span>
-                  {% if m.status.value == 'pending' %}Ausstehend
-                  {% elif m.status.value == 'active' %}Läuft
-                  {% else %}Beendet{% endif %}
-                </span>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+  <!-- Contact Person (editable, always, if PIN valid) -->
+  {% if pin_valid %}
+  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm mb-6">
+    <div class="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary text-xl">contact_phone</span>
+      <h2 class="font-lexend font-bold text-lg uppercase tracking-tight text-on-surface">Kontaktperson</h2>
     </div>
-    {% else %}
-    <div class="empty-state card">
-      <div class="empty-state-icon">📋</div>
-      <p>Spielplan wurde noch nicht generiert.</p>
-    </div>
-    {% endif %}
-
-    <!-- 2. Vorrunden-Tabelle -->
-    <h2 class="section-title">Vorrunden-Tabelle – Feld {{ team.field_group }}</h2>
-    <div class="card" style="padding:0;overflow:hidden">
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:40px;text-align:center">#</th>
-              <th>Team</th>
-              <th style="text-align:center">Gespielt</th>
-              <th style="text-align:center">Punkte</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for entry in standings %}
-            <tr class="{% if entry.promotes %}promotes{% else %}relegates{% endif %}">
-              <td class="rank-col">{{ entry.rank }}</td>
-              <td>
-                {% if entry.team_id == team.id %}
-                <strong style="color:var(--red)">▶ {{ entry.team_name }}</strong>
-                {% else %}
-                {{ entry.team_name }}
-                {% endif %}
-              </td>
-              <td style="text-align:center">{{ entry.played }}</td>
-              <td class="points-col" style="text-align:center">{{ entry.points }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    {% if pin_valid %}
-    <!-- 3. Spielerliste -->
-    <h2 class="section-title">Spielerliste</h2>
-    {% if team.players_locked and team.players %}
-    <div class="card">
-      <div style="display:flex;align-items:center;gap:.75rem;padding:.1rem 0 1rem">
-        <span style="font-size:1.5rem">🔒</span>
+    <form method="post" action="/turnier/{{ tournament.slug }}/team/{{ team.id }}/kontakt" class="p-5">
+      <input type="hidden" name="pin" value="{{ pin }}">
+      <p class="text-sm text-secondary mb-4">Ansprechpartner für Rückfragen. Kann jederzeit geändert werden.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         <div>
-          <div style="font-weight:700;margin-bottom:.2rem">Spielerliste eingereicht</div>
-          <div style="font-size:.875rem;color:#7a7a7a">Die Spielerliste wurde bereits gespeichert und ist gesperrt. Änderungen sind nur über den Admin möglich.</div>
+          <label class="block text-xs font-grotesk font-semibold uppercase tracking-wide text-secondary mb-1.5">Name</label>
+          <input type="text" name="contact_person" value="{{ team.contact_person or '' }}" placeholder="Max Mustermann"
+                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-lexend focus:outline-none focus:border-primary">
+        </div>
+        <div>
+          <label class="block text-xs font-grotesk font-semibold uppercase tracking-wide text-secondary mb-1.5">Telefon</label>
+          <input type="tel" name="contact_phone" value="{{ team.contact_phone or '' }}" placeholder="+43 664 ..."
+                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-lexend focus:outline-none focus:border-primary">
         </div>
       </div>
-      <div class="table-wrapper">
-        <table>
+      <button type="submit"
+              class="px-5 py-2 bg-primary text-white rounded font-grotesk font-semibold text-sm uppercase tracking-wide hover:bg-red-800 transition-colors">
+        Speichern
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
+  <!-- Schedule -->
+  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm mb-6">
+    <div class="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary text-xl">calendar_month</span>
+      <h2 class="font-lexend font-bold text-lg uppercase tracking-tight text-on-surface">Spielplan</h2>
+    </div>
+    {% if matches %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-surface-container-high border-b border-gray-100">
+            <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Uhrzeit</th>
+            <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Feld</th>
+            <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Runde</th>
+            <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Gegner</th>
+            <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Ergebnis</th>
+            <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for m in matches %}
+          {% set opponent = (m.team_b.name if m.team_b else (m.team_b_placeholder or '?')) if m.team_a_id == team.id else (m.team_a.name if m.team_a else (m.team_a_placeholder or '?')) %}
+          <tr class="{% if m.status.value == 'active' %}match-active{% elif m.status.value == 'finished' %}match-finished{% endif %} hover:bg-surface-container-low transition-colors">
+            <td class="py-3 px-4 font-grotesk font-bold text-sm">{{ m.scheduled_time.strftime('%H:%M') if m.scheduled_time else '–' }}</td>
+            <td class="py-3 px-4"><span class="px-2 py-0.5 bg-surface-container rounded font-grotesk text-xs font-semibold uppercase">{{ m.field_number }}</span></td>
+            <td class="py-3 px-4">
+              <span class="font-grotesk text-xs font-semibold uppercase tracking-wide text-secondary">
+                {% if m.round_type.value == 'prelim' %}Vorrunde
+                {% elif m.round_type.value == 'inter' %}Zwischenrunde
+                {% else %}Platzierung{% endif %}
+              </span>
+            </td>
+            <td class="py-3 px-4 font-lexend font-semibold text-sm">{{ opponent }}</td>
+            <td class="py-3 px-4 text-center font-grotesk font-bold text-primary">
+              {% if m.score_a is not none and m.score_b is not none %}
+                {% if m.team_a_id == team.id %}{{ m.score_a }} : {{ m.score_b }}
+                {% else %}{{ m.score_b }} : {{ m.score_a }}{% endif %}
+              {% else %}<span class="text-gray-300">–</span>{% endif %}
+            </td>
+            <td class="py-3 px-4">
+              <span class="badge badge-{{ m.status.value }}">
+                <span class="badge-dot"></span>
+                <span class="badge-label">{% if m.status.value == 'pending' %}Ausstehend{% elif m.status.value == 'active' %}Läuft{% else %}Beendet{% endif %}</span>
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="flex flex-col items-center py-10 text-center">
+      <span class="material-symbols-outlined text-4xl text-gray-300 mb-2">calendar_month</span>
+      <p class="text-secondary text-sm">Spielplan wurde noch nicht generiert.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Standings table -->
+  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm mb-6">
+    <div class="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary text-xl">leaderboard</span>
+      <h2 class="font-lexend font-bold text-lg uppercase tracking-tight text-on-surface">Vorrunden-Tabelle – Feld {{ team.field_group }}</h2>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-surface-container-high border-b border-gray-100">
+            <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary w-10 text-center">#</th>
+            <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Team</th>
+            <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Gespielt</th>
+            <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-primary text-center">Punkte</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in standings %}
+          <tr class="{% if entry.promotes %}promotes{% else %}relegates{% endif %} hover:bg-surface-container-low transition-colors border-b border-gray-100 last:border-0">
+            <td class="py-3 px-4 text-center font-grotesk font-bold text-on-surface">{{ entry.rank }}</td>
+            <td class="py-3 px-4 font-lexend font-semibold text-sm {% if entry.team_id == team.id %}text-primary{% else %}text-on-surface{% endif %}">
+              {% if entry.team_id == team.id %}▶ {% endif %}{{ entry.team_name }}
+            </td>
+            <td class="py-3 px-4 text-center font-grotesk text-sm">{{ entry.played }}</td>
+            <td class="py-3 px-4 text-center font-grotesk font-bold text-primary">{{ entry.points }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Player List -->
+  {% if pin_valid %}
+  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+    <div class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-xl">group</span>
+        <h2 class="font-lexend font-bold text-lg uppercase tracking-tight text-on-surface">Spielerliste</h2>
+      </div>
+      {% if team.players_locked and team.players %}
+      <span class="inline-flex items-center gap-1.5 bg-gray-100 text-gray-600 px-3 py-1 rounded font-grotesk text-xs font-semibold uppercase tracking-wide">
+        <span class="material-symbols-outlined text-sm">lock</span>Gesperrt
+      </span>
+      {% endif %}
+    </div>
+
+    {% if team.players_locked and team.players %}
+    <!-- Locked: show read-only list -->
+    <div class="px-5 py-4">
+      <div class="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-4">
+        <span class="material-symbols-outlined text-gray-400 text-xl">lock</span>
+        <div>
+          <div class="font-lexend font-semibold text-sm text-on-surface">Spielerliste eingereicht</div>
+          <div class="text-xs text-secondary">Gespeichert und gesperrt. Änderungen nur über den Admin möglich.</div>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse">
           <thead>
-            <tr>
-              <th style="width:60px;text-align:center">Nummer</th>
-              <th>Name</th>
+            <tr class="border-b border-gray-100">
+              <th class="py-2 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center w-16">Nr.</th>
+              <th class="py-2 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Name</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody class="divide-y divide-gray-100">
             {% for player in team.players %}
             <tr>
-              <td style="text-align:center">
-                <span style="font-family:var(--font-head);font-size:1.1rem;font-weight:700;color:var(--red)">
-                  {{ player.jersey_number if player.jersey_number is not none else '–' }}
-                </span>
-              </td>
-              <td><strong>{{ player.name }}</strong></td>
+              <td class="py-2.5 px-4 text-center font-grotesk font-black text-primary text-lg">{{ player.jersey_number if player.jersey_number is not none else '–' }}</td>
+              <td class="py-2.5 px-4 font-lexend font-semibold text-sm">{{ player.name }}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
     </div>
+
     {% else %}
-    <div class="card">
-      <p style="font-size:.875rem;color:#7a7a7a;margin-bottom:1rem">
-        Bitte alle Spieler mit Namen und Trikotnummer eintragen.
-        Die Liste kann <strong>nur einmal</strong> eingereicht werden und ist danach gesperrt.
-        Maximal {{ max_players }} Spieler.
+    <!-- Unlocked: show form -->
+    <div class="p-5">
+      <p class="text-sm text-secondary mb-4">
+        Bitte alle Spieler eintragen. Die Liste kann <strong>nur einmal</strong> eingereicht werden. Max. {{ max_players }} Spieler.
       </p>
       <form method="post" action="/turnier/{{ tournament.slug }}/team/{{ team.id }}/spieler">
         <input type="hidden" name="pin" value="{{ pin }}">
-        <div style="display:grid;gap:.6rem;margin-bottom:1rem">
+        <div class="grid gap-2.5 mb-4">
           {% for i in range(1, max_players + 1) %}
           {% set existing = team.players[i-1] if team.players and i <= team.players|length else none %}
-          <div style="display:flex;gap:.5rem;align-items:center">
-            <span style="font-family:var(--font-head);font-size:1rem;font-weight:700;color:var(--gray-300);width:1.5rem;text-align:center;flex-shrink:0">{{ i }}</span>
+          <div class="flex items-center gap-3">
+            <span class="font-grotesk font-bold text-secondary w-6 text-center text-sm flex-shrink-0">{{ i }}</span>
             <input type="number" name="spieler_nummer_{{ i }}"
                    value="{{ existing.jersey_number if existing and existing.jersey_number is not none else '' }}"
                    placeholder="Nr." min="1" max="99" inputmode="numeric"
-                   class="form-control" style="width:75px;flex-shrink:0;text-align:center;font-family:var(--font-head);font-weight:700;font-size:1rem">
+                   class="w-16 flex-shrink-0 border border-gray-200 rounded px-2 py-2 text-center font-grotesk font-bold text-sm focus:outline-none focus:border-primary">
             <input type="text" name="spieler_name_{{ i }}"
                    value="{{ existing.name if existing else '' }}"
                    placeholder="Vorname Nachname" maxlength="80"
-                   class="form-control" style="flex:1">
+                   class="flex-1 border border-gray-200 rounded px-3 py-2 text-sm font-lexend focus:outline-none focus:border-primary">
           </div>
           {% endfor %}
         </div>
-        <div style="background:#fff8e1;border:1px solid #ffc107;border-radius:6px;padding:.75rem 1rem;margin-bottom:.85rem;font-size:.875rem">
-          ⚠️ <strong>Achtung:</strong> Nach dem Einreichen kann die Spielerliste nicht mehr verändert werden!
+        <div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4 text-sm text-amber-800">
+          <strong>Achtung:</strong> Nach dem Einreichen kann die Spielerliste nicht mehr verändert werden!
         </div>
-        <label style="display:flex;align-items:flex-start;gap:.6rem;margin-bottom:1rem;font-size:.875rem;cursor:pointer;line-height:1.4">
-          <input type="checkbox" name="confirm" required style="width:16px;height:16px;flex-shrink:0;margin-top:.1rem">
+        <label class="flex items-start gap-3 mb-4 cursor-pointer text-sm text-on-surface">
+          <input type="checkbox" name="confirm" required class="w-4 h-4 mt-0.5 flex-shrink-0 rounded accent-primary">
           Ich bestätige, dass die Spielerliste vollständig und korrekt ist.
         </label>
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary btn-lg">💾 Spielerliste einreichen</button>
-        </div>
+        <button type="submit"
+                class="px-6 py-2.5 bg-primary text-white rounded font-grotesk font-semibold text-sm uppercase tracking-wide hover:bg-red-800 transition-colors">
+          Spielerliste einreichen
+        </button>
       </form>
     </div>
     {% endif %}
-    {% endif %}
-
-    <!-- Eingetragene Spieler (immer sichtbar wenn nicht locked und hat Spieler) -->
-    {% if team.players and not (team.players_locked and pin_valid) %}
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Spielerliste</div>
-        <span class="badge badge-active"><span class="badge-dot"></span>{{ team.players | length }} Spieler</span>
-      </div>
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:60px;text-align:center">Nummer</th>
-              <th>Name</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for player in team.players %}
-            <tr>
-              <td style="text-align:center">
-                <span style="font-family:var(--font-head);font-size:1.1rem;font-weight:700;color:var(--red)">
-                  {{ player.jersey_number if player.jersey_number is not none else '–' }}
-                </span>
-              </td>
-              <td><strong>{{ player.name }}</strong></td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    {% endif %}
-
   </div>
+  {% endif %}
+
+  {% if team.players and not (team.players_locked and pin_valid) %}
+  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm mt-6">
+    <div class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-xl">group</span>
+        <h2 class="font-lexend font-bold text-lg uppercase tracking-tight text-on-surface">Spielerliste</h2>
+      </div>
+      <span class="badge-active"><span class="badge-dot"></span>{{ team.players | length }} Spieler</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse">
+        <thead>
+          <tr class="border-b border-gray-100">
+            <th class="py-2 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center w-16">Nr.</th>
+            <th class="py-2 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Name</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for player in team.players %}
+          <tr>
+            <td class="py-2.5 px-4 text-center font-grotesk font-black text-primary text-lg">{{ player.jersey_number if player.jersey_number is not none else '–' }}</td>
+            <td class="py-2.5 px-4 font-lexend font-semibold text-sm">{{ player.name }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
 </div>
 {% endblock %}

@@ -3,99 +3,213 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Völkerball Turnier-Manager{% endblock %}</title>
+  <title>{% block title %}Blaulicht Völkerball – Feuerwehr Wolfurt{% endblock %}</title>
   <meta name="description" content="{% block description %}Blaulicht Völkerball Turnier – Feuerwehr Wolfurt{% endblock %}">
   <meta property="og:image" content="https://feuerwehr.wolfurt.at/wp-content/uploads/2015/02/cropped-logo-feuerwehr-aktiv-150x150.jpg">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏐</text></svg>">
-  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script id="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#ac001e",
+            "primary-container": "#d90429",
+            "on-primary": "#ffffff",
+            "secondary": "#5b5d74",
+            "tertiary": "#495567",
+            "background": "#f5fafc",
+            "surface": "#f5fafc",
+            "surface-container": "#eaeff1",
+            "surface-container-low": "#eff4f6",
+            "surface-container-high": "#e4e9eb",
+            "surface-container-highest": "#dee3e5",
+            "surface-container-lowest": "#ffffff",
+            "on-surface": "#171c1e",
+            "on-surface-variant": "#5d3f3d",
+            "inverse-surface": "#2c3133",
+            "inverse-on-surface": "#ecf1f3",
+            "outline": "#926e6c",
+            "outline-variant": "#e7bcba",
+            "on-secondary-fixed-variant": "#43455b",
+            "tertiary-container": "#616d81",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6",
+          },
+          fontFamily: {
+            "lexend": ["Lexend", "sans-serif"],
+            "grotesk": ["Space Grotesk", "sans-serif"],
+          },
+          borderRadius: {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "2xl": "0.75rem",
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Lexend', sans-serif; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .hero-clip { clip-path: polygon(0 0, 100% 0, 100% 88%, 0% 100%); }
+    /* Live-update functional classes */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .match-active td { background: rgba(172,0,30,.04) !important; }
+    .match-finished { opacity: .8; }
+    .promotes td { background: rgba(34,197,94,.07) !important; }
+    .relegates td { background: rgba(239,68,68,.04) !important; }
+    /* Badge states */
+    .badge-active { display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;background:#fee2e2;color:#ac001e;border-radius:.25rem;font-size:.75rem;font-weight:600; }
+    .badge-finished { display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;background:#e5e7eb;color:#374151;border-radius:.25rem;font-size:.75rem;font-weight:600; }
+    .badge-pending { display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;background:#fef9c3;color:#854d0e;border-radius:.25rem;font-size:.75rem;font-weight:600; }
+    .badge-dot { width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;flex-shrink:0; }
+    .badge-active .badge-dot { animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    /* Tab buttons */
+    .tab-btn { padding:.4rem 1rem;font-family:'Space Grotesk',sans-serif;font-size:.8rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border-radius:.25rem;color:#5b5d74;transition:background .15s,color .15s;cursor:pointer;border:none;background:transparent; }
+    .tab-btn.active { background:#ac001e;color:#fff; }
+    .tab-btn:hover:not(.active) { background:#eaeff1;color:#171c1e; }
+    /* Mobile nav */
+    .mobile-nav { display:none;flex-direction:column;background:#2c3133;padding:.75rem 0; }
+    .mobile-nav.open { display:flex; }
+    .mobile-nav a { padding:.65rem 1.5rem;color:rgba(255,255,255,.85);font-family:'Lexend',sans-serif;font-size:.9rem;font-weight:600;text-decoration:none;letter-spacing:.04em;text-transform:uppercase; }
+    .mobile-nav a:hover { color:#fff;background:rgba(255,255,255,.06); }
+    /* Team login dropdown */
+    .tl-drop { display:none;position:absolute;right:0;top:calc(100% + .5rem);width:17rem;background:#fff;border:1px solid #e5e7eb;border-radius:.5rem;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:1rem;z-index:60; }
+    .tl-drop.open { display:block; }
+    /* Hamburger */
+    .hamburger { background:none;border:none;cursor:pointer;padding:.35rem;display:flex;flex-direction:column;gap:5px;align-items:center;justify-content:center; }
+    .hamburger span { display:block;width:22px;height:2px;background:#171c1e;border-radius:2px;transition:all .2s; }
+    .hamburger.open span:nth-child(1) { transform:rotate(45deg) translate(5px,5px); }
+    .hamburger.open span:nth-child(2) { opacity:0; }
+    .hamburger.open span:nth-child(3) { transform:rotate(-45deg) translate(5px,-5px); }
+  </style>
   {% block extra_head %}{% endblock %}
 </head>
-<body data-slug="{% block body_slug %}{% endblock %}">
+<body class="bg-background text-on-surface min-h-screen flex flex-col" data-slug="{% block body_slug %}{% endblock %}">
 
-<header class="site-header">
-  <div class="container">
-    <div class="header-inner">
-      <a href="/" class="header-logo">
-        <img src="https://feuerwehr.wolfurt.at/wp-content/uploads/2015/02/cropped-logo-feuerwehr-aktiv-150x150.jpg"
-             alt="Feuerwehr Wolfurt Logo">
-      </a>
+<!-- Top Navigation -->
+<header class="bg-white sticky top-0 z-50 border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center gap-4">
 
-      <div class="header-title">
-        {% if tournament is defined and tournament %}
-          <a href="/turnier/{{ tournament.slug }}" class="site-name" style="color:white;display:block;">{{ tournament.name }}</a>
-          <div class="site-sub">Feuerwehr Wolfurt</div>
-        {% else %}
-          <a href="/" class="site-name" style="color:white;display:block;">Blaulicht Völkerball</a>
-          <div class="site-sub">Feuerwehr Wolfurt</div>
-        {% endif %}
+    <!-- Brand -->
+    <a href="/" class="flex items-center gap-3 flex-shrink-0 mr-2">
+      <img src="https://feuerwehr.wolfurt.at/wp-content/uploads/2015/02/cropped-logo-feuerwehr-aktiv-150x150.jpg"
+           alt="Feuerwehr Wolfurt" class="h-9 w-9 rounded-full object-cover">
+      <div>
+        <div class="text-lg font-black text-primary uppercase tracking-tight font-lexend leading-none">
+          {% if tournament is defined and tournament %}{{ tournament.name }}{% else %}Blaulicht Turnier{% endif %}
+        </div>
+        <div class="text-[10px] text-secondary font-grotesk uppercase tracking-widest leading-none mt-px">Feuerwehr Wolfurt</div>
       </div>
+    </a>
 
-      <nav class="header-nav" aria-label="Hauptnavigation">
-        {% block header_nav %}
-        {% set nav_tournaments = get_nav_tournaments() %}
-        {% if tournament is defined and tournament %}
-          <a href="/turnier/{{ tournament.slug }}/spielplan" {% if request.url.path.endswith('/spielplan') %}class="active"{% endif %}>Spielplan</a>
-          <a href="/turnier/{{ tournament.slug }}/rangliste" {% if request.url.path.endswith('/rangliste') %}class="active"{% endif %}>Rangliste</a>
-          <a href="/turnier/{{ tournament.slug }}/regeln" class="nav-rules">Spielregeln</a>
-          {% if nav_tournaments | length > 1 %}
-          <span style="color:rgba(255,255,255,.3);padding:0 .25rem">|</span>
-          {% for t in nav_tournaments %}{% if t.slug != tournament.slug %}
-          <a href="/turnier/{{ t.slug }}">{{ t.name }}</a>
-          {% endif %}{% endfor %}
-          {% endif %}
-        {% else %}
-          {% for t in nav_tournaments %}
-          <a href="/turnier/{{ t.slug }}">{{ t.name }}</a>
-          {% endfor %}
+    <!-- Desktop Nav -->
+    {% block header_nav %}
+    {% set nav_tournaments = get_nav_tournaments() %}
+    <nav class="hidden md:flex items-center gap-1 h-full flex-1">
+      {% if tournament is defined and tournament %}
+        <a href="/turnier/{{ tournament.slug }}/spielplan"
+           class="px-3 h-full flex items-center font-grotesk font-semibold text-sm uppercase tracking-wide border-b-2 transition-colors
+                  {% if request.url.path.endswith('/spielplan') %}border-primary text-primary{% else %}border-transparent text-secondary hover:text-primary{% endif %}">
+          Spielplan
+        </a>
+        <a href="/turnier/{{ tournament.slug }}/rangliste"
+           class="px-3 h-full flex items-center font-grotesk font-semibold text-sm uppercase tracking-wide border-b-2 transition-colors
+                  {% if request.url.path.endswith('/rangliste') %}border-primary text-primary{% else %}border-transparent text-secondary hover:text-primary{% endif %}">
+          Rangliste
+        </a>
+        <a href="/turnier/{{ tournament.slug }}/regeln"
+           class="px-3 h-full flex items-center font-grotesk font-semibold text-sm uppercase tracking-wide border-b-2 transition-colors
+                  {% if request.url.path.endswith('/regeln') %}border-primary text-primary{% else %}border-transparent text-secondary hover:text-primary{% endif %}">
+          Spielregeln
+        </a>
+        {% if nav_tournaments | length > 1 %}
+        <span class="h-5 w-px bg-gray-200 mx-2"></span>
+        {% for t in nav_tournaments %}{% if t.slug != tournament.slug %}
+        <a href="/turnier/{{ t.slug }}"
+           class="px-3 h-full flex items-center font-grotesk font-semibold text-sm uppercase tracking-wide border-b-2 border-transparent text-secondary hover:text-primary transition-colors">
+          {{ t.name }}
+        </a>
+        {% endif %}{% endfor %}
         {% endif %}
-        {% endblock %}
-      </nav>
+      {% else %}
+        {% for t in nav_tournaments %}
+        <a href="/turnier/{{ t.slug }}"
+           class="px-3 h-full flex items-center font-grotesk font-semibold text-sm uppercase tracking-wide border-b-2 border-transparent text-secondary hover:text-primary transition-colors">
+          {{ t.name }}
+        </a>
+        {% endfor %}
+      {% endif %}
+    </nav>
+    {% endblock %}
 
-      <div class="team-login-wrap">
-        <button class="team-login-btn" id="tl-btn" type="button">👥 Team</button>
-        <div class="team-login-dropdown" id="tl-drop">
-          <div class="tl-title">Team-Anmeldung</div>
-          <form method="post" action="/team/login">
-            <div style="margin-bottom:.5rem">
-              <label style="font-size:.75rem;color:#666;display:block;margin-bottom:.2rem;font-weight:600">Team</label>
-              {% set nav_teams = get_nav_teams() %}
-              {% if nav_teams %}
-              <select name="team_id" class="form-control" required style="padding:.35rem .6rem;font-size:.875rem">
+    <div class="ml-auto flex items-center gap-2">
+      <!-- Team Login Dropdown -->
+      <div class="relative team-login-wrap">
+        <button id="tl-btn" type="button"
+                class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-on-surface hover:border-primary hover:text-primary transition-colors">
+          <span class="material-symbols-outlined text-[18px]">groups</span>
+          <span class="hidden sm:inline">Team</span>
+        </button>
+        <div class="tl-drop" id="tl-drop">
+          <div class="text-xs font-grotesk font-semibold uppercase tracking-widest text-secondary mb-3">Team-Anmeldung</div>
+          <form method="post" action="/team/login" class="flex flex-col gap-2">
+            {% set nav_teams = get_nav_teams() %}
+            {% if nav_teams %}
+            <div>
+              <label class="text-xs text-secondary font-semibold block mb-1">Team</label>
+              <select name="team_id" required
+                      class="w-full border border-gray-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-primary">
                 <option value="">Team auswählen…</option>
                 {% for t in nav_teams %}
                 <option value="{{ t.id }}">{{ t.name }}{% if t.organization %} – {{ t.organization }}{% endif %} (Feld {{ t.field_group }})</option>
                 {% endfor %}
               </select>
-              {% else %}
-              <input type="number" name="team_id" class="form-control" placeholder="Team-ID" required style="padding:.35rem .6rem;font-size:.875rem">
-              {% endif %}
             </div>
-            <div style="margin-bottom:.75rem">
-              <label style="font-size:.75rem;color:#666;display:block;margin-bottom:.2rem;font-weight:600">PIN</label>
-              <input type="text" name="pin" class="form-control" placeholder="1234" maxlength="4" inputmode="numeric" autocomplete="off" required style="padding:.35rem .6rem;font-size:.875rem;letter-spacing:.15em;font-weight:700">
+            {% else %}
+            <div>
+              <label class="text-xs text-secondary font-semibold block mb-1">Team-ID</label>
+              <input type="number" name="team_id" placeholder="Team-ID" required
+                     class="w-full border border-gray-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-primary">
             </div>
-            <button type="submit" class="btn btn-primary" style="width:100%;font-size:.875rem">→ Zum Teambereich</button>
+            {% endif %}
+            <div>
+              <label class="text-xs text-secondary font-semibold block mb-1">PIN</label>
+              <input type="text" name="pin" placeholder="1234" maxlength="4" inputmode="numeric" autocomplete="off" required
+                     class="w-full border border-gray-200 rounded px-2 py-1.5 text-sm tracking-widest font-bold focus:outline-none focus:border-primary">
+            </div>
+            <button type="submit"
+                    class="w-full mt-1 bg-primary text-white py-2 rounded font-grotesk font-semibold text-sm uppercase tracking-wide hover:bg-red-800 transition-colors">
+              → Zum Teambereich
+            </button>
           </form>
         </div>
       </div>
 
-      <button class="hamburger" id="hamburger" aria-label="Menü öffnen">
+      <!-- Hamburger -->
+      <button class="hamburger md:hidden" id="hamburger" aria-label="Menü">
         <span></span><span></span><span></span>
       </button>
     </div>
   </div>
 </header>
 
-<nav class="mobile-nav" id="mobile-nav" aria-label="Mobile Navigation">
-  {% block mobile_nav %}
-  {% set nav_tournaments = get_nav_tournaments() %}
+<!-- Mobile Nav -->
+{% block mobile_nav %}
+{% set nav_tournaments = get_nav_tournaments() %}
+<nav class="mobile-nav" id="mobile-nav">
   {% if tournament is defined and tournament %}
     <a href="/turnier/{{ tournament.slug }}">Übersicht</a>
     <a href="/turnier/{{ tournament.slug }}/spielplan">Spielplan</a>
     <a href="/turnier/{{ tournament.slug }}/rangliste">Rangliste</a>
     <a href="/turnier/{{ tournament.slug }}/regeln">Spielregeln</a>
     {% if nav_tournaments | length > 1 %}
-    <div style="border-top:1px solid rgba(255,255,255,.1);margin:.5rem 0;padding-top:.5rem;font-size:.7rem;color:rgba(255,255,255,.4);padding-left:1rem;text-transform:uppercase;letter-spacing:.08em">Andere Turniere</div>
     {% for t in nav_tournaments %}{% if t.slug != tournament.slug %}
     <a href="/turnier/{{ t.slug }}">{{ t.name }}</a>
     {% endif %}{% endfor %}
@@ -106,40 +220,50 @@
     <a href="/turnier/{{ t.slug }}">{{ t.name }}</a>
     {% endfor %}
   {% endif %}
-  {% endblock %}
-
-  <div class="mobile-team-login">
-    <div class="mobile-tl-label">Team-Anmeldung</div>
-    <form method="post" action="/team/login">
+  <!-- Mobile team login -->
+  <div style="padding:.75rem 1.25rem;border-top:1px solid rgba(255,255,255,.1);margin-top:.25rem">
+    <div class="text-xs text-gray-400 font-grotesk font-semibold uppercase tracking-widest mb-2">Team-Anmeldung</div>
+    <form method="post" action="/team/login" class="flex flex-col gap-2">
       {% set nav_teams = get_nav_teams() %}
       {% if nav_teams %}
-      <select name="team_id" class="form-control mobile-tl-input" required style="margin-bottom:.4rem">
+      <select name="team_id" required style="background:#3a3f42;color:#fff;border:1px solid rgba(255,255,255,.15);padding:.35rem .5rem;border-radius:.25rem;font-size:.875rem;width:100%">
         <option value="">Team auswählen…</option>
         {% for t in nav_teams %}
         <option value="{{ t.id }}">{{ t.name }}{% if t.organization %} – {{ t.organization }}{% endif %} (Feld {{ t.field_group }})</option>
         {% endfor %}
       </select>
       {% else %}
-      <input type="number" name="team_id" placeholder="Team-ID" class="form-control mobile-tl-input" required>
+      <input type="number" name="team_id" placeholder="Team-ID" required style="background:#3a3f42;color:#fff;border:1px solid rgba(255,255,255,.15);padding:.35rem .5rem;border-radius:.25rem;font-size:.875rem;width:100%">
       {% endif %}
-      <input type="text" name="pin" placeholder="PIN" maxlength="4" inputmode="numeric" autocomplete="off" class="form-control mobile-tl-input mobile-tl-pin" required>
-      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.4rem">→ Zum Teambereich</button>
+      <input type="text" name="pin" placeholder="PIN" maxlength="4" inputmode="numeric" autocomplete="off" required style="background:#3a3f42;color:#fff;border:1px solid rgba(255,255,255,.15);padding:.35rem .5rem;border-radius:.25rem;font-size:.875rem;width:100%;letter-spacing:.15em;font-weight:700">
+      <button type="submit" style="background:#ac001e;color:#fff;border:none;padding:.45rem;border-radius:.25rem;font-size:.875rem;font-weight:600;cursor:pointer;width:100%">→ Zum Teambereich</button>
     </form>
   </div>
 </nav>
+{% endblock %}
 
-<main>
+<!-- Content -->
+<main class="flex-1">
   {% block content %}{% endblock %}
 </main>
 
-<footer class="site-footer">
-  <div class="container">
-    <div class="footer-inner">
-      <span>Feuerwehr Wolfurt &nbsp;|&nbsp; Blaulicht Völkerball Turnier-Manager</span>
-      <span class="footer-links">
-        <a href="/admin/dashboard" class="footer-btn">Admin</a>
-        <a href="/schiri/login" class="footer-btn">Schiedsrichter</a>
-      </span>
+<!-- Footer -->
+<footer class="bg-gray-50 border-t border-gray-200 py-8 px-6 mt-auto">
+  <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+    <div class="flex items-center gap-3">
+      <img src="https://feuerwehr.wolfurt.at/wp-content/uploads/2015/02/cropped-logo-feuerwehr-aktiv-150x150.jpg"
+           alt="Feuerwehr Wolfurt" class="h-8 w-8 rounded-full object-cover opacity-70">
+      <span class="text-sm font-lexend font-semibold text-secondary uppercase tracking-wide">Feuerwehr Wolfurt · Blaulicht Völkerball</span>
+    </div>
+    <div class="flex gap-3">
+      <a href="/admin/dashboard"
+         class="px-4 py-2 text-sm font-grotesk font-semibold uppercase tracking-wide text-secondary border border-gray-200 rounded hover:border-primary hover:text-primary transition-colors">
+        Admin
+      </a>
+      <a href="/schiri/login"
+         class="px-4 py-2 text-sm font-grotesk font-semibold uppercase tracking-wide text-secondary border border-gray-200 rounded hover:border-primary hover:text-primary transition-colors">
+        Schiedsrichter
+      </a>
     </div>
   </div>
 </footer>

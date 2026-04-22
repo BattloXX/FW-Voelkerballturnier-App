@@ -40,7 +40,7 @@
   </div>
 
   <form method="post" action="/admin/turnier/{{ tournament.id }}/team/neu"
-        style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid #f0f0f0;align-items:end">
+        style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto auto;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid #f0f0f0;align-items:end">
     <div>
       <label style="font-size:.75rem;color:#888;display:block;margin-bottom:.2rem">Teamname *</label>
       <input type="text" name="name" class="form-control" placeholder="z.B. Feuerwehr Dornbirn 1" required>
@@ -48,6 +48,14 @@
     <div>
       <label style="font-size:.75rem;color:#888;display:block;margin-bottom:.2rem">Organisation</label>
       <input type="text" name="organization" class="form-control" placeholder="z.B. FF Dornbirn">
+    </div>
+    <div>
+      <label style="font-size:.75rem;color:#888;display:block;margin-bottom:.2rem">Ansprechpartner</label>
+      <input type="text" name="contact_person" class="form-control" placeholder="Max Mustermann">
+    </div>
+    <div>
+      <label style="font-size:.75rem;color:#888;display:block;margin-bottom:.2rem">Telefon</label>
+      <input type="text" name="contact_phone" class="form-control" placeholder="+43 ...">
     </div>
     <div>
       <label style="font-size:.75rem;color:#888;display:block;margin-bottom:.2rem">Feld</label>
@@ -85,7 +93,11 @@
                 <button type="submit" class="btn btn-secondary btn-sm">✓</button>
               </div>
               <input type="text" name="organization" value="{{ team.organization or '' }}" class="form-control"
-                     placeholder="Organisation (z.B. FF Lauterach)" style="padding:.25rem .6rem;font-size:.8rem;color:#555">
+                     placeholder="Organisation" style="padding:.25rem .6rem;font-size:.8rem;color:#555">
+              <input type="text" name="contact_person" value="{{ team.contact_person or '' }}" class="form-control"
+                     placeholder="Ansprechpartner" style="padding:.25rem .6rem;font-size:.8rem;color:#555">
+              <input type="text" name="contact_phone" value="{{ team.contact_phone or '' }}" class="form-control"
+                     placeholder="Telefon" style="padding:.25rem .6rem;font-size:.8rem;color:#555">
             </form>
           </td>
           <td><span class="tag">Feld {{ team.field_group }}</span></td>

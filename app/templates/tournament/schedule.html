@@ -3,186 +3,205 @@
 {% block body_slug %}{{ tournament.slug }}{% endblock %}
 
 {% block content %}
-<div class="page-hero">
-  <div class="container">
-    <div class="page-hero-inner">
-      <div class="breadcrumb" style="color:rgba(255,255,255,.6)">
-        <a href="/" style="color:rgba(255,255,255,.6)">Turniere</a>
-        <span class="breadcrumb-sep">›</span>
-        <a href="/turnier/{{ tournament.slug }}" style="color:rgba(255,255,255,.6)">{{ tournament.name }}</a>
-        <span class="breadcrumb-sep">›</span>
-        <span style="color:white">Spielplan</span>
-      </div>
-      <h1 class="page-hero-title">Spielplan</h1>
-      <div class="page-hero-meta">
-        <span>📅 {{ tournament.date.strftime('%d.%m.%Y') }}</span>
-        <span id="live-indicator" class="live-indicator" style="display:none">
-          <span class="live-dot"></span> Live
-        </span>
+<!-- Page Header -->
+<div class="bg-inverse-surface pb-10 pt-8">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="flex items-center gap-2 text-white/50 text-xs font-grotesk font-semibold uppercase tracking-widest mb-3">
+      <a href="/" class="hover:text-white/80 transition-colors">Turniere</a>
+      <span>›</span>
+      <a href="/turnier/{{ tournament.slug }}" class="hover:text-white/80 transition-colors">{{ tournament.name }}</a>
+      <span>›</span>
+      <span class="text-white/80">Spielplan</span>
+    </div>
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h1 class="font-lexend font-black text-white uppercase text-4xl tracking-tight leading-none">Spielplan</h1>
+        <div class="flex items-center gap-3 mt-2 text-white/60">
+          <span class="font-grotesk text-sm uppercase tracking-wide">{{ tournament.date.strftime('%d.%m.%Y') }}</span>
+          <span id="live-indicator" class="hidden items-center gap-1.5 text-sm font-grotesk font-semibold uppercase tracking-wide text-primary">
+            <span class="w-2 h-2 rounded-full bg-primary" style="animation:pulse 1.5s infinite"></span>
+            Live
+          </span>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<div class="container">
-  <div class="page-content" style="padding-top:0">
+<div class="max-w-7xl mx-auto px-6 py-8">
+  {% set has_matches = (prelim_by_field.values() | sum(start=[]) | list | length) > 0 %}
+  {% if not has_matches %}
+  <div class="flex flex-col items-center py-16 text-center">
+    <span class="material-symbols-outlined text-5xl text-gray-300 mb-4">calendar_month</span>
+    <p class="text-secondary text-lg">Der Spielplan wurde noch nicht generiert.</p>
+  </div>
+  {% else %}
 
-    {% set has_matches = (prelim_by_field.values() | sum(start=[]) | list | length) > 0 %}
-    {% if not has_matches %}
-      <div class="empty-state card">
-        <div class="empty-state-icon">📋</div>
-        <p>Der Spielplan wurde noch nicht generiert.</p>
-      </div>
-    {% else %}
-
-    <div class="tab-nav" role="tablist">
-      {% for f in fields %}
-      <button class="tab-btn {% if loop.first %}active{% endif %}" data-tab="prelim-{{ f }}" role="tab">
-        Vorrunde Feld {{ f }}
-      </button>
-      {% endfor %}
-      {% if inter_matches %}
-      <button class="tab-btn" data-tab="inter" role="tab">Zwischenrunde</button>
-      {% endif %}
-      {% if placement_matches %}
-      <button class="tab-btn" data-tab="placement" role="tab">Platzierungsspiele</button>
-      {% endif %}
-    </div>
-
+  <!-- Tab Navigation -->
+  <div class="flex flex-wrap gap-1 bg-surface-container p-1 rounded-xl mb-6 w-fit">
     {% for f in fields %}
-    <div class="tab-content {% if loop.first %}active{% endif %}" id="prelim-{{ f }}" role="tabpanel">
-      <div class="card" style="padding:0;overflow:hidden">
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Zeit</th>
-                <th>Feld</th>
-                <th>Team A</th>
-                <th style="text-align:center">Ergebnis</th>
-                <th>Team B</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for m in prelim_by_field[f] %}
-              <tr data-match-id="{{ m.id }}"
-                  class="{% if m.status.value == 'active' %}match-active{% elif m.status.value == 'finished' %}match-finished{% endif %}">
-                <td class="match-time">{{ m.scheduled_time.strftime('%H:%M') if m.scheduled_time else '–' }}</td>
-                <td class="match-field">{{ m.field_number }}</td>
-                <td class="match-teams">{{ m.team_a.name if m.team_a else '?' }}{% if m.team_a and m.team_a.organization %}<br><span style="font-size:.75rem;color:#999">{{ m.team_a.organization }}</span>{% endif %}</td>
-                <td class="match-score" style="text-align:center">
-                  {% if m.score_a is not none and m.score_b is not none %}
-                    {{ m.score_a }} : {{ m.score_b }}
-                  {% else %}
-                    –
-                  {% endif %}
-                </td>
-                <td class="match-teams">{{ m.team_b.name if m.team_b else '?' }}{% if m.team_b and m.team_b.organization %}<br><span style="font-size:.75rem;color:#999">{{ m.team_b.organization }}</span>{% endif %}</td>
-                <td>
-                  <span class="badge badge-{{ m.status.value }}">
-                    <span class="badge-dot"></span>
-                    <span class="badge-label">
-                      {% if m.status.value == 'pending' %}Ausstehend
-                      {% elif m.status.value == 'active' %}Läuft
-                      {% else %}Beendet{% endif %}
-                    </span>
-                  </span>
-                </td>
-              </tr>
-              {% else %}
-              <tr><td colspan="6" style="text-align:center;color:#7a7a7a;padding:1.5rem">Keine Spiele für dieses Feld.</td></tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <button class="tab-btn {% if loop.first %}active{% endif %}" data-tab="prelim-{{ f }}">
+      Vorrunde Feld {{ f }}
+    </button>
     {% endfor %}
-
     {% if inter_matches %}
-    <div class="tab-content" id="inter" role="tabpanel">
-      <div class="card" style="padding:0;overflow:hidden">
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Zeit</th>
-                <th>Gruppe</th>
-                <th>Team A</th>
-                <th style="text-align:center">Ergebnis</th>
-                <th>Team B</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for m in inter_matches %}
-              <tr data-match-id="{{ m.id }}"
-                  class="{% if m.status.value == 'active' %}match-active{% elif m.status.value == 'finished' %}match-finished{% endif %}">
-                <td class="match-time">{{ m.scheduled_time.strftime('%H:%M') if m.scheduled_time else '–' }}</td>
-                <td class="match-field">Zw.{{ m.field_number }}</td>
-                <td class="match-teams">{{ m.team_a.name if m.team_a else (m.team_a_placeholder or '?') }}{% if m.team_a and m.team_a.organization %}<br><span style="font-size:.75rem;color:#999">{{ m.team_a.organization }}</span>{% endif %}</td>
-                <td class="match-score" style="text-align:center">
-                  {% if m.score_a is not none and m.score_b is not none %}{{ m.score_a }} : {{ m.score_b }}{% else %}–{% endif %}
-                </td>
-                <td class="match-teams">{{ m.team_b.name if m.team_b else (m.team_b_placeholder or '?') }}{% if m.team_b and m.team_b.organization %}<br><span style="font-size:.75rem;color:#999">{{ m.team_b.organization }}</span>{% endif %}</td>
-                <td>
-                  <span class="badge badge-{{ m.status.value }}">
-                    <span class="badge-dot"></span>
-                    <span class="badge-label">{% if m.status.value == 'pending' %}Ausstehend{% elif m.status.value == 'active' %}Läuft{% else %}Beendet{% endif %}</span>
-                  </span>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <button class="tab-btn" data-tab="inter">Zwischenrunde</button>
     {% endif %}
-
     {% if placement_matches %}
-    <div class="tab-content" id="placement" role="tabpanel">
-      <div class="card" style="padding:0;overflow:hidden">
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Zeit</th>
-                <th>Spiel</th>
-                <th>Team A</th>
-                <th style="text-align:center">Ergebnis</th>
-                <th>Team B</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for m in placement_matches %}
-              <tr data-match-id="{{ m.id }}"
-                  class="{% if m.status.value == 'active' %}match-active{% elif m.status.value == 'finished' %}match-finished{% endif %}">
-                <td class="match-time">{{ m.scheduled_time.strftime('%H:%M') if m.scheduled_time else '–' }}</td>
-                <td class="match-field" style="font-weight:600">Platz {{ loop.index * 2 - 1 }}/{{ loop.index * 2 }}</td>
-                <td class="match-teams">{{ m.team_a.name if m.team_a else (m.team_a_placeholder or '?') }}{% if m.team_a and m.team_a.organization %}<br><span style="font-size:.75rem;color:#999">{{ m.team_a.organization }}</span>{% endif %}</td>
-                <td class="match-score" style="text-align:center">
-                  {% if m.score_a is not none and m.score_b is not none %}{{ m.score_a }} : {{ m.score_b }}{% else %}–{% endif %}
-                </td>
-                <td class="match-teams">{{ m.team_b.name if m.team_b else (m.team_b_placeholder or '?') }}{% if m.team_b and m.team_b.organization %}<br><span style="font-size:.75rem;color:#999">{{ m.team_b.organization }}</span>{% endif %}</td>
-                <td>
-                  <span class="badge badge-{{ m.status.value }}">
-                    <span class="badge-dot"></span>
-                    <span class="badge-label">{% if m.status.value == 'pending' %}Ausstehend{% elif m.status.value == 'active' %}Läuft{% else %}Beendet{% endif %}</span>
-                  </span>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    {% endif %}
-
+    <button class="tab-btn" data-tab="placement">Platzierungsspiele</button>
     {% endif %}
   </div>
+
+  <!-- Tables -->
+  {% for f in fields %}
+  <div class="tab-content {% if loop.first %}active{% endif %}" id="prelim-{{ f }}">
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-surface-container-high border-b border-gray-200">
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Zeit</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Feld</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Team A</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Ergebnis</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Team B</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for m in prelim_by_field[f] %}
+            <tr data-match-id="{{ m.id }}"
+                class="{% if m.status.value == 'active' %}match-active{% elif m.status.value == 'finished' %}match-finished{% endif %} hover:bg-surface-container-low transition-colors">
+              <td class="match-time py-3 px-4 font-grotesk font-bold text-sm text-on-surface">{{ m.scheduled_time.strftime('%H:%M') if m.scheduled_time else '–' }}</td>
+              <td class="match-field py-3 px-4">
+                <span class="px-2 py-0.5 bg-surface-container rounded font-grotesk text-xs font-semibold uppercase">Feld {{ m.field_number }}</span>
+              </td>
+              <td class="match-teams py-3 px-4 font-lexend font-semibold text-sm text-on-surface">
+                {{ m.team_a.name if m.team_a else '?' }}
+                {% if m.team_a and m.team_a.organization %}<br><span class="text-xs font-normal text-secondary">{{ m.team_a.organization }}</span>{% endif %}
+              </td>
+              <td class="match-score py-3 px-4 text-center font-grotesk font-bold text-lg text-primary">
+                {% if m.score_a is not none and m.score_b is not none %}{{ m.score_a }} : {{ m.score_b }}{% else %}<span class="text-gray-300">–</span>{% endif %}
+              </td>
+              <td class="match-teams py-3 px-4 font-lexend font-semibold text-sm text-on-surface">
+                {{ m.team_b.name if m.team_b else '?' }}
+                {% if m.team_b and m.team_b.organization %}<br><span class="text-xs font-normal text-secondary">{{ m.team_b.organization }}</span>{% endif %}
+              </td>
+              <td class="py-3 px-4">
+                <span class="badge badge-{{ m.status.value }}">
+                  <span class="badge-dot"></span>
+                  <span class="badge-label">{% if m.status.value == 'pending' %}Ausstehend{% elif m.status.value == 'active' %}Läuft{% else %}Beendet{% endif %}</span>
+                </span>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="py-8 text-center text-secondary">Keine Spiele für dieses Feld.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  {% if inter_matches %}
+  <div class="tab-content" id="inter">
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-surface-container-high border-b border-gray-200">
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Zeit</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Gruppe</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Team A</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Ergebnis</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Team B</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for m in inter_matches %}
+            <tr data-match-id="{{ m.id }}"
+                class="{% if m.status.value == 'active' %}match-active{% elif m.status.value == 'finished' %}match-finished{% endif %} hover:bg-surface-container-low transition-colors">
+              <td class="match-time py-3 px-4 font-grotesk font-bold text-sm">{{ m.scheduled_time.strftime('%H:%M') if m.scheduled_time else '–' }}</td>
+              <td class="match-field py-3 px-4">
+                <span class="px-2 py-0.5 bg-surface-container rounded font-grotesk text-xs font-semibold uppercase">Zw.{{ m.field_number }}</span>
+              </td>
+              <td class="match-teams py-3 px-4 font-lexend font-semibold text-sm">
+                {{ m.team_a.name if m.team_a else (m.team_a_placeholder or '?') }}
+                {% if m.team_a and m.team_a.organization %}<br><span class="text-xs font-normal text-secondary">{{ m.team_a.organization }}</span>{% endif %}
+              </td>
+              <td class="match-score py-3 px-4 text-center font-grotesk font-bold text-lg text-primary">
+                {% if m.score_a is not none and m.score_b is not none %}{{ m.score_a }} : {{ m.score_b }}{% else %}<span class="text-gray-300">–</span>{% endif %}
+              </td>
+              <td class="match-teams py-3 px-4 font-lexend font-semibold text-sm">
+                {{ m.team_b.name if m.team_b else (m.team_b_placeholder or '?') }}
+                {% if m.team_b and m.team_b.organization %}<br><span class="text-xs font-normal text-secondary">{{ m.team_b.organization }}</span>{% endif %}
+              </td>
+              <td class="py-3 px-4">
+                <span class="badge badge-{{ m.status.value }}">
+                  <span class="badge-dot"></span>
+                  <span class="badge-label">{% if m.status.value == 'pending' %}Ausstehend{% elif m.status.value == 'active' %}Läuft{% else %}Beendet{% endif %}</span>
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if placement_matches %}
+  <div class="tab-content" id="placement">
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-surface-container-high border-b border-gray-200">
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Zeit</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Spiel</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Team A</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Ergebnis</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Team B</th>
+              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for m in placement_matches %}
+            <tr data-match-id="{{ m.id }}"
+                class="{% if m.status.value == 'active' %}match-active{% elif m.status.value == 'finished' %}match-finished{% endif %} hover:bg-surface-container-low transition-colors">
+              <td class="match-time py-3 px-4 font-grotesk font-bold text-sm">{{ m.scheduled_time.strftime('%H:%M') if m.scheduled_time else '–' }}</td>
+              <td class="match-field py-3 px-4">
+                <span class="px-2 py-0.5 bg-surface-container rounded font-grotesk text-xs font-bold uppercase">Platz {{ loop.index * 2 - 1 }}/{{ loop.index * 2 }}</span>
+              </td>
+              <td class="match-teams py-3 px-4 font-lexend font-semibold text-sm">
+                {{ m.team_a.name if m.team_a else (m.team_a_placeholder or '?') }}
+                {% if m.team_a and m.team_a.organization %}<br><span class="text-xs font-normal text-secondary">{{ m.team_a.organization }}</span>{% endif %}
+              </td>
+              <td class="match-score py-3 px-4 text-center font-grotesk font-bold text-lg text-primary">
+                {% if m.score_a is not none and m.score_b is not none %}{{ m.score_a }} : {{ m.score_b }}{% else %}<span class="text-gray-300">–</span>{% endif %}
+              </td>
+              <td class="match-teams py-3 px-4 font-lexend font-semibold text-sm">
+                {{ m.team_b.name if m.team_b else (m.team_b_placeholder or '?') }}
+                {% if m.team_b and m.team_b.organization %}<br><span class="text-xs font-normal text-secondary">{{ m.team_b.organization }}</span>{% endif %}
+              </td>
+              <td class="py-3 px-4">
+                <span class="badge badge-{{ m.status.value }}">
+                  <span class="badge-dot"></span>
+                  <span class="badge-label">{% if m.status.value == 'pending' %}Ausstehend{% elif m.status.value == 'active' %}Läuft{% else %}Beendet{% endif %}</span>
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% endif %}
 </div>
 {% endblock %}

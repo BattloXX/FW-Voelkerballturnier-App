@@ -29,6 +29,8 @@ def _migrate_schema():
             "ALTER TABLE tournaments ADD COLUMN points_draw INT NOT NULL DEFAULT 1",
             "ALTER TABLE teams ADD COLUMN players_locked TINYINT(1) NOT NULL DEFAULT 0",
             "ALTER TABLE teams ADD COLUMN organization VARCHAR(200) NULL",
+            "ALTER TABLE teams ADD COLUMN contact_person VARCHAR(200) NULL",
+            "ALTER TABLE teams ADD COLUMN contact_phone VARCHAR(50) NULL",
         ]
         for sql in pending:
             try:
