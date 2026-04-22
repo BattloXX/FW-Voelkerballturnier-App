@@ -11,12 +11,12 @@ Entwickelt mit FastAPI, MariaDB und Jinja2-Templates – optimiert für Tablets 
 | Bereich | Zugang | Beschreibung |
 |---|---|---|
 | **Startseite** | Öffentlich | Übersicht aller Turniere mit Status |
-| **Spielplan** | Öffentlich | Live-Spielplan aller Runden mit automatischer Aktualisierung alle 30 Sekunden |
+| **Spielplan** | Öffentlich | Live-Spielplan aller Runden mit automatischer Aktualisierung |
 | **Rangliste** | Öffentlich | Endrangliste, Zwischenrunden- und Vorrunden-Tabellen pro Feld |
-| **Spielregeln** | Öffentlich | Formatierte Spielregeln (Markdown) |
-| **Team-Seite** | QR-Code + PIN | Teams sehen Spielplan, aktuelle Platzierung und tragen ihre Spielerliste ein (einmalig, danach gesperrt) |
-| **Infoscreen** | Öffentlich | Vollbild-Anzeige für TV/Beamer mit Live-Rangliste, laufenden Spielen und Ergebnissen (30s Auto-Refresh) |
-| **Schiedsrichter** | Login | Ergebniseingabe per Tablet, große Touch-freundliche Buttons |
+| **Spielregeln** | Öffentlich | Formatierte Spielregeln (WYSIWYG-Editor im Admin, HTML-Ausgabe) |
+| **Team-Seite** | QR-Code + PIN | Teams sehen Spielplan, aktuelle Platzierung, tragen Spielerliste ein und pflegen Kontaktdaten |
+| **Infoscreen** | Öffentlich | Vollbild-Anzeige für TV/Beamer mit Live-Rangliste, laufenden Spielen inkl. Zwischenstand und Ergebnissen (10s Auto-Refresh) |
+| **Schiedsrichter** | Login | Ergebniseingabe und Live-Zwischenstand per Tablet, große Touch-freundliche Buttons |
 | **Administration** | Login | Vollständige Turnierverwaltung inkl. Rangliste, editierbarem Spielplan und PDF-Export |
 
 ---
@@ -117,7 +117,7 @@ Beim ersten Start wird automatisch ein Superadmin-Account angelegt:
 |---|---|
 | `/schiri/login` | Schiedsrichter-Login |
 | `/schiri/dashboard` | Turnier- und Feldauswahl |
-| `/schiri/turnier/<slug>/feld/<n>` | Ergebniseingabe für Feld n |
+| `/schiri/turnier/<slug>/feld/<n>` | Ergebniseingabe und Zwischenstand für Feld n |
 
 ### Administration
 | URL | Beschreibung |
@@ -132,7 +132,6 @@ Beim ersten Start wird automatisch ein Superadmin-Account angelegt:
 | `/admin/turnier/<id>/team/<team_id>/spieler` | Spielerliste eines Teams bearbeiten (Admin) |
 | `/admin/turnier/<id>/pdf/alle` | Alle Team-PDFs als Sammel-PDF |
 | `/admin/turnier/<id>/urkunden` | Urkunden-PDF für alle Teilnehmer |
-| `/infoscreen/<slug>` | Vollbild-Infoscreen (auch direkt verknüpft im Admin) |
 | `/admin/benutzer` | Benutzerverwaltung (nur Superadmin) |
 
 ---
@@ -140,16 +139,17 @@ Beim ersten Start wird automatisch ein Superadmin-Account angelegt:
 ## Turnierdurchführung – Ablauf
 
 ### Vorbereitung (vor dem Turnier)
-1. **Admin-Login** → Neues Turnier erstellen (Startzeiten, Spielzeiten, Punkteregeln konfigurieren)
-2. **Teams anlegen** → Name, Organisation (z.B. „FF Dornbirn") und Feld-Gruppe eingeben; PIN wird automatisch generiert
+1. **Admin-Login** → Neues Turnier erstellen (Startzeiten, Spielzeiten, Punkteregeln, Spielregeln konfigurieren)
+2. **Teams anlegen** → Name, Organisation (z.B. „FF Dornbirn"), Ansprechpartner + Telefon und Feld-Gruppe eingeben; PIN wird automatisch generiert
 3. **Spielplan generieren** → Button „Spielplan generieren"
-4. **Team-PDFs drucken** → Pro Team ein A4-Blatt mit QR-Code, PIN, Team-ID und Spielplan (`/admin/turnier/<id>/pdf/alle`)
+4. **Team-PDFs drucken** → Pro Team ein A4-Blatt mit QR-Code, PIN, Team-ID und Spielplan (`/admin/turnier/<id>/pdf/alle`)  
+   Der Ausdruck enthält einen Hinweis, die Spielernamen über den QR-Code einzupflegen.
 5. Teams tragen ihre **Spielerliste** (bis zu 10 Spieler mit Name und Trikotnummer) einmalig über die Team-Seite ein. Nach dem Einreichen ist die Liste gesperrt; nur Admins können sie noch ändern.
 
 ### Während des Turniers
-1. **Schiedsrichter** melden sich über den **„Schiedsrichter"**-Button im Footer an
-2. Feld auswählen → Spiel starten → verbleibende Spieler am Ende eingeben
-3. **Infoscreen** für TV/Beamer: `/infoscreen` – aktualisiert sich automatisch alle 30 Sekunden
+1. **Schiedsrichter** melden sich über den **„Schiedsrichter"**-Button im Footer an (landet direkt am Dashboard)
+2. Feld auswählen → **Spiel starten** → verbleibende Spieler laufend per **„Zwischenstand aktualisieren"** einpflegen → am Ende **„Ergebnis bestätigen"**
+3. **Infoscreen** für TV/Beamer: `/infoscreen` – zeigt Zwischenstände laufender Spiele, aktualisiert sich alle 10 Sekunden
 4. Die **Rangliste** aktualisiert sich live – Aufstiegsplätze werden grün markiert
 
 ### Nach der Vorrunde
@@ -215,6 +215,25 @@ Die Team-ID ist zusätzlich auf dem PDF-Ausdruck vermerkt (für manuelle Eingabe
 
 ---
 
+## Kontaktperson & Telefon
+
+- Jedes Team kann auf seiner Team-Seite **Ansprechpartner und Telefonnummer** hinterlegen
+- Diese Angaben sind **jederzeit editierbar** (kein Lock, auch nach Sperren der Spielerliste)
+- Admins können Kontaktdaten ebenfalls im Team-Verwaltungs-Dialog pflegen
+- Erscheinen auf dem Team-PDF-Ausdruck
+
+---
+
+## Spielregeln (WYSIWYG-Editor)
+
+- Spielregeln werden im Admin pro Turnier mit einem **Quill.js WYSIWYG-Editor** erfasst
+- Unterstützt Fett, Kursiv, Unterstrichen, Überschriften (H1–H3), geordnete und ungeordnete Listen
+- **HTML-Quellcode-Toggle**: Über den `</> HTML-Quellcode`-Button lässt sich direkt HTML einfügen oder bearbeiten (Copy & Paste aus externen Quellen möglich)
+- Bestehende Regeln im Markdown-Format werden automatisch rückwärtskompatibel gerendert
+- Öffentliche Ansicht unter `/turnier/<slug>/regeln`
+
+---
+
 ## Organisation / Verein
 
 - Wird beim **Anlegen eines Teams** im Admin direkt mitgepflegt (z.B. „FF Lauterach")
@@ -251,11 +270,23 @@ Die Admin-Rangliste (`/admin/turnier/<id>/rangliste`) zeigt:
 Die Seite `/infoscreen/<slug>` ist als Vollbild-Großbildschirm-Anzeige ausgelegt:
 
 - **Drei Spalten:** Rangliste (links) · Laufende Spiele + Nächste Spiele (Mitte) · Letzte Ergebnisse (rechts)
+- **Zwischenstände** laufender Spiele werden live angezeigt (Schiedsrichter aktualisiert per Button)
 - **Live-Uhr** und LIVE-Indikator im roten Header
-- **Automatische Aktualisierung** alle 30 Sekunden via AJAX
+- **Automatische Aktualisierung** alle 10 Sekunden via AJAX
 - Organisation wird unter dem Teamnamen angezeigt
 - Kein Login nötig – `/infoscreen` leitet automatisch auf das aktive Turnier weiter
 - Direktlink im Admin-Panel unter jedem Turnier (📺 Infoscreen)
+
+---
+
+## Schiedsrichter – Zwischenstand
+
+Der Schiedsrichter kann während eines laufenden Spiels jederzeit den aktuellen Spielstand eintragen:
+
+1. Spiel starten → die Spieler-Inputs beginnen bei **6 : 6**
+2. Während des Spiels: verbleibende Spieler anpassen → **„Zwischenstand aktualisieren"** klicken
+3. Der Infoscreen zeigt den Zwischenstand spätestens nach 10 Sekunden
+4. Am Spielende: finale Spielerzahl eingeben → **„Ergebnis bestätigen"** → Spiel wird als beendet gewertet
 
 ---
 
@@ -267,8 +298,8 @@ Die Seite `/infoscreen/<slug>` ist als Vollbild-Großbildschirm-Anzeige ausgeleg
 
 ### Team-Ausdruck (vor dem Turnier)
 - Ein A4-Blatt pro Team – sauberes 2-spaltiges Layout
-- **Links:** Teamname (groß), Organisation, Datum, Feld, PIN (groß, rot)
-- **Rechts:** QR-Code (5,5 cm), Team-ID zur manuellen Eingabe
+- **Links:** Teamname (groß), Organisation, Ansprechpartner + Telefon (falls hinterlegt), Datum, Feld, PIN (groß, rot)
+- **Rechts:** QR-Code (5,5 cm), Hinweis zur Spielernamen-Pflege über QR-Code, Team-ID zur manuellen Eingabe
 - Darunter: eigener Spielplan als Tabelle
 - Sammel-PDF aller Teams: `/admin/turnier/<id>/pdf/alle`
 
@@ -309,8 +340,9 @@ Bestehende Turniere können die alten Punktewerte haben. Unter `/admin/turnier/<
 
 - **Backend:** Python 3.11, FastAPI, SQLAlchemy 2.x
 - **Datenbank:** MariaDB (mysql+pymysql)
-- **Frontend:** Jinja2-Templates, Vanilla JavaScript (Live-Polling alle 30 s)
+- **Frontend:** Jinja2-Templates, Tailwind CSS (CDN), Vanilla JavaScript
+- **Fonts:** Lexend + Space Grotesk (Google Fonts), Material Symbols Outlined
+- **WYSIWYG:** Quill.js 1.3.7 (Spielregeln-Editor)
 - **PDF:** ReportLab + qrcode
-- **Auth:** JWT (PyJWT), bcrypt (passlib)
+- **Auth:** JWT (jose), bcrypt (passlib)
 - **Server:** Uvicorn hinter Nginx (CloudPanel)
-- **Fonts:** Oswald + Source Sans 3 (Google Fonts)
