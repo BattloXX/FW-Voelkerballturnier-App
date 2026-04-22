@@ -259,6 +259,7 @@ def add_team(
     tournament_id: int,
     request: Request,
     name: str = Form(...),
+    organization: str = Form(""),
     field_group: int = Form(...),
     db: Session = Depends(get_db)
 ):
@@ -269,6 +270,7 @@ def add_team(
     team = models.Team(
         tournament_id=tournament_id,
         name=name.strip(),
+        organization=organization.strip() or None,
         field_group=field_group,
         pin=_generate_pin(),
     )

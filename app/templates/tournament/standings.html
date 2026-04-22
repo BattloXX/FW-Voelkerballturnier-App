@@ -55,7 +55,7 @@
                 {% set final_rank = (g - 1) * (grp | length) + entry.rank %}
                 {% if final_rank == 1 %}🥇{% elif final_rank == 2 %}🥈{% elif final_rank == 3 %}🥉{% else %}{{ final_rank }}{% endif %}
               </td>
-              <td><strong>{{ entry.team_name }}</strong></td>
+              <td><strong>{{ entry.team_name }}</strong>{% if entry.organization %}<br><span style="font-size:.75rem;color:#999;font-weight:400">{{ entry.organization }}</span>{% endif %}</td>
               <td style="text-align:center">{{ entry.played }}</td>
               <td style="text-align:center">{{ entry.wins }}</td>
               <td style="text-align:center">{{ entry.losses }}</td>
@@ -95,7 +95,7 @@
               {% for entry in inter_standings_by_group[g] %}
               <tr>
                 <td class="rank-col">{{ entry.rank }}</td>
-                <td><strong>{{ entry.team_name }}</strong></td>
+                <td><strong>{{ entry.team_name }}</strong>{% if entry.organization %}<br><span style="font-size:.75rem;color:#999;font-weight:400">{{ entry.organization }}</span>{% endif %}</td>
                 <td style="text-align:center">{{ entry.played }}</td>
                 <td style="text-align:center">{{ entry.wins }}</td>
                 <td style="text-align:center">{{ entry.losses }}</td>
@@ -148,7 +148,7 @@
               {% for entry in standings_by_field[f] %}
               <tr data-team-id="{{ entry.team_id }}" class="{% if entry.promotes %}promotes{% else %}relegates{% endif %}">
                 <td class="rank-col">{{ entry.rank }}</td>
-                <td><strong>{{ entry.team_name }}</strong></td>
+                <td><strong>{{ entry.team_name }}</strong>{% if entry.organization %}<br><span style="font-size:.75rem;color:#999;font-weight:400">{{ entry.organization }}</span>{% endif %}</td>
                 <td style="text-align:center">{{ entry.played }}</td>
                 <td style="text-align:center">{{ entry.wins }}</td>
                 <td style="text-align:center">{{ entry.losses }}</td>

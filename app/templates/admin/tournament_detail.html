@@ -40,15 +40,24 @@
   </div>
 
   <form method="post" action="/admin/turnier/{{ tournament.id }}/team/neu"
-        style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid #f0f0f0">
-    <input type="text" name="name" class="form-control" placeholder="Teamname" required
-           style="flex:1;min-width:160px">
-    <select name="field_group" class="form-control" style="width:auto;min-width:120px">
-      {% for f in range(1, tournament.num_fields + 1) %}
-      <option value="{{ f }}">Feld {{ f }}</option>
-      {% endfor %}
-    </select>
-    <button type="submit" class="btn btn-primary">➕ Team hinzufügen</button>
+        style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid #f0f0f0;align-items:end">
+    <div>
+      <label style="font-size:.75rem;color:#888;display:block;margin-bottom:.2rem">Teamname *</label>
+      <input type="text" name="name" class="form-control" placeholder="z.B. Feuerwehr Dornbirn 1" required>
+    </div>
+    <div>
+      <label style="font-size:.75rem;color:#888;display:block;margin-bottom:.2rem">Organisation</label>
+      <input type="text" name="organization" class="form-control" placeholder="z.B. FF Dornbirn">
+    </div>
+    <div>
+      <label style="font-size:.75rem;color:#888;display:block;margin-bottom:.2rem">Feld</label>
+      <select name="field_group" class="form-control" style="width:auto;min-width:100px">
+        {% for f in range(1, tournament.num_fields + 1) %}
+        <option value="{{ f }}">Feld {{ f }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary" style="align-self:end">➕ Hinzufügen</button>
   </form>
 
   {% if teams %}
@@ -69,7 +78,8 @@
         <tr>
           <td>
             <form method="post" action="/admin/turnier/{{ tournament.id }}/team/{{ team.id }}/umbenennen"
-                  style="display:grid;gap:.3rem">
+                  style="display:grid;gap:.3rem"
+                  onkeydown="if(event.key==='Enter'&&event.target.tagName==='INPUT'){event.preventDefault();this.submit();}">
               <div style="display:flex;gap:.35rem">
                 <input type="text" name="name" value="{{ team.name }}" class="form-control" style="min-width:120px;padding:.35rem .6rem;font-size:.875rem">
                 <button type="submit" class="btn btn-secondary btn-sm">✓</button>

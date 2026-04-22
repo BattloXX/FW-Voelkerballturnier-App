@@ -30,5 +30,30 @@ def _get_all_tournaments():
         db.close()
 
 
+def _get_nav_teams():
+    db = SessionLocal()
+    try:
+        active_tournaments = db.query(models.Tournament).filter(
+            models.Tournament.status.in_([
+                models.TournamentStatus.active,
+                models.TournamentStatus.registration,
+            ])
+        ).all()
+        if not active_tournaments:
+            return []
+        t_ids = [t.id for t in active_tournaments]
+        return (
+            db.query(models.Team)
+            .filter(models.Team.tournament_id.in_(t_ids))
+            .order_by(models.Team.field_group, models.Team.name)
+            .all()
+        )
+    except Exception:
+        return []
+    finally:
+        db.close()
+
+
 templates.env.globals["get_nav_tournaments"] = _get_nav_tournaments
 templates.env.globals["get_all_tournaments"] = _get_all_tournaments
+templates.env.globals["get_nav_teams"] = _get_nav_teams

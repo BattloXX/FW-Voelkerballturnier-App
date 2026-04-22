@@ -135,6 +135,7 @@ class StandingEntry(BaseModel):
     rank: int
     team_id: int
     team_name: str
+    organization: Optional[str] = None
     played: int
     wins: int
     losses: int

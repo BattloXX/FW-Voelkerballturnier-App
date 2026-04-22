@@ -70,7 +70,7 @@
                   class="{% if m.status.value == 'active' %}match-active{% elif m.status.value == 'finished' %}match-finished{% endif %}">
                 <td class="match-time">{{ m.scheduled_time.strftime('%H:%M') if m.scheduled_time else '–' }}</td>
                 <td class="match-field">{{ m.field_number }}</td>
-                <td class="match-teams">{{ m.team_a.name if m.team_a else '?' }}</td>
+                <td class="match-teams">{{ m.team_a.name if m.team_a else '?' }}{% if m.team_a and m.team_a.organization %}<br><span style="font-size:.75rem;color:#999">{{ m.team_a.organization }}</span>{% endif %}</td>
                 <td class="match-score" style="text-align:center">
                   {% if m.score_a is not none and m.score_b is not none %}
                     {{ m.score_a }} : {{ m.score_b }}
@@ -78,7 +78,7 @@
                     –
                   {% endif %}
                 </td>
-                <td class="match-teams">{{ m.team_b.name if m.team_b else '?' }}</td>
+                <td class="match-teams">{{ m.team_b.name if m.team_b else '?' }}{% if m.team_b and m.team_b.organization %}<br><span style="font-size:.75rem;color:#999">{{ m.team_b.organization }}</span>{% endif %}</td>
                 <td>
                   <span class="badge badge-{{ m.status.value }}">
                     <span class="badge-dot"></span>
@@ -121,11 +121,11 @@
                   class="{% if m.status.value == 'active' %}match-active{% elif m.status.value == 'finished' %}match-finished{% endif %}">
                 <td class="match-time">{{ m.scheduled_time.strftime('%H:%M') if m.scheduled_time else '–' }}</td>
                 <td class="match-field">Zw.{{ m.field_number }}</td>
-                <td class="match-teams">{{ m.team_a.name if m.team_a else (m.team_a_placeholder or '?') }}</td>
+                <td class="match-teams">{{ m.team_a.name if m.team_a else (m.team_a_placeholder or '?') }}{% if m.team_a and m.team_a.organization %}<br><span style="font-size:.75rem;color:#999">{{ m.team_a.organization }}</span>{% endif %}</td>
                 <td class="match-score" style="text-align:center">
                   {% if m.score_a is not none and m.score_b is not none %}{{ m.score_a }} : {{ m.score_b }}{% else %}–{% endif %}
                 </td>
-                <td class="match-teams">{{ m.team_b.name if m.team_b else (m.team_b_placeholder or '?') }}</td>
+                <td class="match-teams">{{ m.team_b.name if m.team_b else (m.team_b_placeholder or '?') }}{% if m.team_b and m.team_b.organization %}<br><span style="font-size:.75rem;color:#999">{{ m.team_b.organization }}</span>{% endif %}</td>
                 <td>
                   <span class="badge badge-{{ m.status.value }}">
                     <span class="badge-dot"></span>
@@ -162,11 +162,11 @@
                   class="{% if m.status.value == 'active' %}match-active{% elif m.status.value == 'finished' %}match-finished{% endif %}">
                 <td class="match-time">{{ m.scheduled_time.strftime('%H:%M') if m.scheduled_time else '–' }}</td>
                 <td class="match-field" style="font-weight:600">Platz {{ loop.index * 2 - 1 }}/{{ loop.index * 2 }}</td>
-                <td class="match-teams">{{ m.team_a.name if m.team_a else (m.team_a_placeholder or '?') }}</td>
+                <td class="match-teams">{{ m.team_a.name if m.team_a else (m.team_a_placeholder or '?') }}{% if m.team_a and m.team_a.organization %}<br><span style="font-size:.75rem;color:#999">{{ m.team_a.organization }}</span>{% endif %}</td>
                 <td class="match-score" style="text-align:center">
                   {% if m.score_a is not none and m.score_b is not none %}{{ m.score_a }} : {{ m.score_b }}{% else %}–{% endif %}
                 </td>
-                <td class="match-teams">{{ m.team_b.name if m.team_b else (m.team_b_placeholder or '?') }}</td>
+                <td class="match-teams">{{ m.team_b.name if m.team_b else (m.team_b_placeholder or '?') }}{% if m.team_b and m.team_b.organization %}<br><span style="font-size:.75rem;color:#999">{{ m.team_b.organization }}</span>{% endif %}</td>
                 <td>
                   <span class="badge badge-{{ m.status.value }}">
                     <span class="badge-dot"></span>

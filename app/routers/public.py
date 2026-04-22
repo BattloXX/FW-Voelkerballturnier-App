@@ -276,6 +276,8 @@ def _match_dict(m: models.Match) -> dict:
         "team_b": team_b,
         "team_a_name": team_a,
         "team_b_name": team_b,
+        "team_a_org": m.team_a.organization if m.team_a else None,
+        "team_b_org": m.team_b.organization if m.team_b else None,
         "score_a": m.score_a,
         "score_b": m.score_b,
         "players_remaining_a": m.players_remaining_a,

@@ -139,6 +139,8 @@
       line-height: 1.1;
     }
     .match-live .team-name.right { text-align: right; }
+    .match-live .team-org { font-size: .7rem; color: var(--muted); font-weight: 400; line-height: 1.2; }
+    .match-live .team-name.right .team-org { text-align: right; }
     .match-live .score-box {
       text-align: center;
       font-family: var(--font-head);
@@ -216,7 +218,8 @@
     }
     .standings-row.promotes { background: rgba(34,197,94,.07); }
     .standings-row .rank { color: var(--muted); font-size: .75rem; text-align: right; }
-    .standings-row .sname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    .standings-row .sname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; line-height: 1.2; }
+    .standings-row .sorg { font-size: .65rem; color: var(--muted); font-weight: 400; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .standings-row .sval { text-align: center; color: var(--muted); font-size: .75rem; }
     .standings-row .spts { text-align: center; font-family: var(--font-head); font-weight: 700; color: var(--red); font-size: .9rem; }
 
@@ -298,7 +301,7 @@
         {% for e in entries %}
         <div class="standings-row {% if e.promotes %}promotes{% endif %}">
           <span class="rank">{{ e.rank }}</span>
-          <span class="sname">{{ e.team_name }}</span>
+          <span class="sname">{{ e.team_name }}{% if e.organization %}<small class="sorg">{{ e.organization }}</small>{% endif %}</span>
           <span class="sval">{{ e.played }}</span>
           <span class="sval">{{ e.wins }}</span>
           <span class="sval">{{ e.diff }}</span>
@@ -316,7 +319,7 @@
         {% for e in entries %}
         <div class="standings-row">
           <span class="rank">{{ e.rank }}</span>
-          <span class="sname">{{ e.team_name }}</span>
+          <span class="sname">{{ e.team_name }}{% if e.organization %}<small class="sorg">{{ e.organization }}</small>{% endif %}</span>
           <span class="sval">{{ e.played }}</span>
           <span class="sval">{{ e.wins }}</span>
           <span class="sval">{{ e.diff }}</span>
@@ -347,12 +350,12 @@
             {% if m.round_type == 'prelim' %}Vorrunde{% elif m.round_type == 'inter' %}Zwischenrunde{% else %}Platzierung{% endif %}
             · Feld {{ m.field_number }}
           </div>
-          <div class="team-name">{{ m.team_a_name }}</div>
+          <div class="team-name">{{ m.team_a_name }}{% if m.team_a_org %}<div class="team-org">{{ m.team_a_org }}</div>{% endif %}</div>
           <div class="score-box">
             {% if m.players_remaining_a is not none %}{{ m.players_remaining_a }} : {{ m.players_remaining_b }}
             {% else %}– : –{% endif %}
           </div>
-          <div class="team-name right">{{ m.team_b_name }}</div>
+          <div class="team-name right">{{ m.team_b_name }}{% if m.team_b_org %}<div class="team-org">{{ m.team_b_org }}</div>{% endif %}</div>
           {% if m.players_remaining_a is not none %}
           <div class="players-sub">verbleibende Spieler</div>
           {% endif %}
@@ -494,9 +497,9 @@ function renderData(data) {
         : (m.score_a != null ? `${m.score_a} : ${m.score_b}` : '– : –');
       html += `<div class="match-live">
         <div class="field-tag">${roundLabel(m.round_type)} · Feld ${m.field_number}</div>
-        <div class="team-name">${esc(m.team_a)}</div>
+        <div class="team-name">${esc(m.team_a)}${m.team_a_org ? '<div class="team-org">' + esc(m.team_a_org) + '</div>' : ''}</div>
         <div class="score-box">${scoreStr}</div>
-        <div class="team-name right">${esc(m.team_b)}</div>
+        <div class="team-name right">${esc(m.team_b)}${m.team_b_org ? '<div class="team-org">' + esc(m.team_b_org) + '</div>' : ''}</div>
         ${m.players_remaining_a != null ? '<div class="players-sub">verbleibende Spieler</div>' : ''}
       </div>`;
     });
@@ -556,7 +559,7 @@ function renderData(data) {
     entries.forEach(e => {
       standHtml += `<div class="standings-row ${e.promotes ? 'promotes' : ''}">
         <span class="rank">${e.rank}</span>
-        <span class="sname">${esc(e.team_name)}</span>
+        <span class="sname">${esc(e.team_name)}${e.organization ? '<small class="sorg">' + esc(e.organization) + '</small>' : ''}</span>
         <span class="sval">${e.played}</span>
         <span class="sval">${e.wins}</span>
         <span class="sval">${e.diff > 0 ? '+' : ''}${e.diff}</span>

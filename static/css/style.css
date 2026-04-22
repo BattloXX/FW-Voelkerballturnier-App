@@ -1258,6 +1258,7 @@ select.form-control { cursor: pointer; }
   margin-bottom: .4rem;
 }
 .mobile-tl-input::placeholder { color: rgba(255,255,255,.4) !important; }
+.mobile-tl-input option { background: #2a2a2a; color: #fff; }
 .mobile-tl-pin { letter-spacing: .15em; font-weight: 700; }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */

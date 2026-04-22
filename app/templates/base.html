@@ -57,8 +57,18 @@
           <div class="tl-title">Team-Anmeldung</div>
           <form method="post" action="/team/login">
             <div style="margin-bottom:.5rem">
-              <label style="font-size:.75rem;color:#666;display:block;margin-bottom:.2rem;font-weight:600">Team-ID</label>
-              <input type="number" name="team_id" class="form-control" placeholder="z.B. 42" required style="padding:.35rem .6rem;font-size:.875rem">
+              <label style="font-size:.75rem;color:#666;display:block;margin-bottom:.2rem;font-weight:600">Team</label>
+              {% set nav_teams = get_nav_teams() %}
+              {% if nav_teams %}
+              <select name="team_id" class="form-control" required style="padding:.35rem .6rem;font-size:.875rem">
+                <option value="">Team auswählen…</option>
+                {% for t in nav_teams %}
+                <option value="{{ t.id }}">{{ t.name }}{% if t.organization %} – {{ t.organization }}{% endif %} (Feld {{ t.field_group }})</option>
+                {% endfor %}
+              </select>
+              {% else %}
+              <input type="number" name="team_id" class="form-control" placeholder="Team-ID" required style="padding:.35rem .6rem;font-size:.875rem">
+              {% endif %}
             </div>
             <div style="margin-bottom:.75rem">
               <label style="font-size:.75rem;color:#666;display:block;margin-bottom:.2rem;font-weight:600">PIN</label>
@@ -101,7 +111,17 @@
   <div class="mobile-team-login">
     <div class="mobile-tl-label">Team-Anmeldung</div>
     <form method="post" action="/team/login">
+      {% set nav_teams = get_nav_teams() %}
+      {% if nav_teams %}
+      <select name="team_id" class="form-control mobile-tl-input" required style="margin-bottom:.4rem">
+        <option value="">Team auswählen…</option>
+        {% for t in nav_teams %}
+        <option value="{{ t.id }}">{{ t.name }}{% if t.organization %} – {{ t.organization }}{% endif %} (Feld {{ t.field_group }})</option>
+        {% endfor %}
+      </select>
+      {% else %}
       <input type="number" name="team_id" placeholder="Team-ID" class="form-control mobile-tl-input" required>
+      {% endif %}
       <input type="text" name="pin" placeholder="PIN" maxlength="4" inputmode="numeric" autocomplete="off" class="form-control mobile-tl-input mobile-tl-pin" required>
       <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.4rem">→ Zum Teambereich</button>
     </form>

@@ -13,10 +13,6 @@
     <div class="alert alert-success">✅ {{ saved }} Spieler erfolgreich eingereicht. Die Liste ist jetzt gesperrt.</div>
     {% endif %}
 
-    {% if saved_org %}
-    <div class="alert alert-success">✅ Organisation gespeichert.</div>
-    {% endif %}
-
     {% if error == 'pin' %}
     <div class="alert alert-error">❌ Falscher PIN – konnte nicht gespeichert werden.</div>
     {% elif error == 'locked' %}
@@ -149,26 +145,7 @@
     </div>
 
     {% if pin_valid %}
-    <!-- 3. Organisation -->
-    <h2 class="section-title">Organisation</h2>
-    <div class="card">
-      <p style="font-size:.875rem;color:#7a7a7a;margin-bottom:.75rem">
-        Eure Feuerwehr oder euer Verein – wird auf der Urkunde angedruckt.
-      </p>
-      <form method="post" action="/turnier/{{ tournament.slug }}/team/{{ team.id }}/organisation">
-        <input type="hidden" name="pin" value="{{ pin }}">
-        <div style="display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap">
-          <div style="flex:1;min-width:180px">
-            <label class="form-label">Organisation / Verein</label>
-            <input type="text" name="organization" class="form-control"
-                   value="{{ team.organization or '' }}" placeholder="z.B. Feuerwehr Lauterach" maxlength="200">
-          </div>
-          <button type="submit" class="btn btn-secondary">Speichern</button>
-        </div>
-      </form>
-    </div>
-
-    <!-- 4. Spielerliste -->
+    <!-- 3. Spielerliste -->
     <h2 class="section-title">Spielerliste</h2>
     {% if team.players_locked and team.players %}
     <div class="card">

@@ -66,69 +66,95 @@ def _get_styles():
     return title_style, heading_style, body_style, pin_style
 
 
-def generate_team_pdf(team: models.Team, tournament: models.Tournament, matches: list, base_url: str) -> bytes:
-    buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=1*cm, bottomMargin=1.5*cm,
-                            leftMargin=1.5*cm, rightMargin=1.5*cm)
-    title_style, heading_style, body_style, pin_style = _get_styles()
+def _team_page_story(team: models.Team, tournament: models.Tournament, matches: list, base_url: str) -> list:
+    """Returns a list of Flowables for one team page (no PageBreak at start)."""
+    content_w = 18 * cm
+    date_str = tournament.date.strftime("%d.%m.%Y") if tournament.date else ""
+    url = f"{base_url}/turnier/{tournament.slug}/team/{team.id}?pin={team.pin}"
+
+    # ── Styles ──────────────────────────────────────────────────────────────
+    hdr_s = ParagraphStyle("TH", fontName="Helvetica-Bold", fontSize=18,
+                           textColor=colors.white, alignment=TA_CENTER, leading=22)
+    name_s = ParagraphStyle("TN", fontName="Helvetica-Bold", fontSize=24,
+                            textColor=FW_RED, alignment=TA_LEFT, leading=28, spaceAfter=2)
+    org_s = ParagraphStyle("TO", fontName="Helvetica", fontSize=12,
+                           textColor=FW_DARK, alignment=TA_LEFT, leading=16, spaceAfter=0)
+    meta_s = ParagraphStyle("TM", fontName="Helvetica", fontSize=10,
+                            textColor=colors.HexColor("#666"), alignment=TA_LEFT, leading=14)
+    pin_lbl_s = ParagraphStyle("PL", fontName="Helvetica", fontSize=8,
+                               textColor=colors.HexColor("#aaa"), alignment=TA_LEFT,
+                               leading=11, spaceBefore=8, spaceAfter=0,
+                               letterSpacing=1)
+    pin_val_s = ParagraphStyle("PV", fontName="Helvetica-Bold", fontSize=52,
+                               textColor=FW_RED, alignment=TA_LEFT, leading=56)
+    qr_id_s = ParagraphStyle("QI", fontName="Helvetica-Bold", fontSize=11,
+                             textColor=FW_DARK, alignment=TA_CENTER, leading=14, spaceBefore=4)
+    qr_hint_s = ParagraphStyle("QH", fontName="Helvetica", fontSize=8,
+                               textColor=colors.HexColor("#888"), alignment=TA_CENTER, leading=11)
+    sched_head_s = ParagraphStyle("SH", fontName="Helvetica-Bold", fontSize=13,
+                                  textColor=FW_RED, leading=17, spaceBefore=2, spaceAfter=4)
+    body_s = ParagraphStyle("BS", fontName="Helvetica", fontSize=10, leading=14)
+
     story = []
 
-    # Header
-    header_data = [[Paragraph(
-        f"<b>{tournament.name}</b>",
-        ParagraphStyle("H", fontName="Helvetica-Bold", fontSize=20, textColor=colors.white, alignment=TA_CENTER)
-    )]]
-    header_table = Table(header_data, colWidths=[18*cm])
-    header_table.setStyle(TableStyle([
+    # ── Header bar ──────────────────────────────────────────────────────────
+    hdr_tbl = Table([[Paragraph(f"<b>{tournament.name}</b>", hdr_s)]], colWidths=[content_w])
+    hdr_tbl.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), FW_RED),
-        ("TOPPADDING", (0, 0), (-1, -1), 14),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 14),
+        ("TOPPADDING", (0, 0), (-1, -1), 12),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
+        ("LEFTPADDING", (0, 0), (-1, -1), 12),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 12),
     ]))
-    story.append(header_table)
-    story.append(Spacer(1, 0.5*cm))
+    story.append(hdr_tbl)
+    story.append(Spacer(1, 0.5 * cm))
 
-    # Team info
-    from datetime import datetime
-    date_str = tournament.date.strftime("%d.%m.%Y") if tournament.date else ""
-    story.append(Paragraph(f"Datum: {date_str}", body_style))
-    story.append(Paragraph(f"<b>Team:</b> {team.name}", heading_style))
-    story.append(Paragraph(f"Gruppe: Feld {team.field_group}", body_style))
-    story.append(Spacer(1, 0.3*cm))
+    # ── Left info + Right QR ─────────────────────────────────────────────────
+    left = [Paragraph(team.name, name_s)]
+    if getattr(team, "organization", None):
+        left.append(Paragraph(team.organization, org_s))
+    left += [
+        Spacer(1, 0.2 * cm),
+        Paragraph(f"Datum: {date_str}", meta_s),
+        Paragraph(f"Gruppe: Feld {team.field_group}", meta_s),
+        Spacer(1, 0.3 * cm),
+        Paragraph("EUER PIN", pin_lbl_s),
+        Paragraph(team.pin, pin_val_s),
+    ]
 
-    story.append(Paragraph("Ihr PIN:", body_style))
-    story.append(Paragraph(team.pin, pin_style))
-    story.append(Spacer(1, 0.3*cm))
-
-    # QR Code
-    url = f"{base_url}/turnier/{tournament.slug}/team/{team.id}?pin={team.pin}"
     qr_buf = _make_qr(url)
-    qr_img = Image(qr_buf, width=4*cm, height=4*cm)
-    qr_table = Table([[qr_img, Paragraph(
-        f"Scannen Sie den QR-Code, um Ihren<br/>Spielplan einzusehen und Ihren<br/>Teamnamen zu ändern.<br/><br/>"
-        f"<font size='8'>{url}</font>",
-        body_style
-    )]], colWidths=[4.5*cm, 13.5*cm])
-    qr_table.setStyle(TableStyle([
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    qr_img = Image(qr_buf, width=5.5 * cm, height=5.5 * cm)
+    right = [
+        qr_img,
+        Paragraph(f"Team-ID: {team.id}", qr_id_s),
+        Paragraph("QR-Code scannen für Spielplan", qr_hint_s),
+    ]
+
+    info_tbl = Table([[left, right]], colWidths=[11 * cm, 7 * cm])
+    info_tbl.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("ALIGN", (1, 0), (1, 0), "CENTER"),
+        ("TOPPADDING", (0, 0), (-1, -1), 0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (0, 0), 8),
+        ("RIGHTPADDING", (1, 0), (1, 0), 0),
     ]))
-    story.append(qr_table)
-    story.append(Spacer(1, 0.5*cm))
+    story.append(info_tbl)
+    story.append(Spacer(1, 0.4 * cm))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=FW_RED, spaceAfter=0.4 * cm))
 
-    # Schedule
-    story.append(Paragraph("Euer Spielplan", heading_style))
-
+    # ── Schedule ─────────────────────────────────────────────────────────────
+    story.append(Paragraph("Euer Spielplan", sched_head_s))
     if matches:
-        table_data = [["Zeit", "Feld", "Gegner"]]
+        tdata = [["Zeit", "Feld", "Gegner"]]
         for m in matches:
-            time_str = m.scheduled_time.strftime("%H:%M") if m.scheduled_time else "-"
-            if m.team_a_id == team.id:
-                opponent = m.team_b.name if m.team_b else (m.team_b_placeholder or "?")
-            else:
-                opponent = m.team_a.name if m.team_a else (m.team_a_placeholder or "?")
-            table_data.append([time_str, str(m.field_number), opponent])
-
-        t = Table(table_data, colWidths=[3*cm, 3*cm, 12*cm])
-        t.setStyle(TableStyle([
+            time_str = m.scheduled_time.strftime("%H:%M") if m.scheduled_time else "–"
+            opponent = (m.team_b.name if m.team_b else (m.team_b_placeholder or "?")) if m.team_a_id == team.id \
+                else (m.team_a.name if m.team_a else (m.team_a_placeholder or "?"))
+            tdata.append([time_str, str(m.field_number), opponent])
+        sched_tbl = Table(tdata, colWidths=[3 * cm, 3 * cm, 12 * cm])
+        sched_tbl.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), FW_RED),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
@@ -138,11 +164,18 @@ def generate_team_pdf(team: models.Team, tournament: models.Tournament, matches:
             ("TOPPADDING", (0, 0), (-1, -1), 5),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
         ]))
-        story.append(t)
+        story.append(sched_tbl)
     else:
-        story.append(Paragraph("Noch kein Spielplan generiert.", body_style))
+        story.append(Paragraph("Noch kein Spielplan generiert.", body_s))
 
-    doc.build(story)
+    return story
+
+
+def generate_team_pdf(team: models.Team, tournament: models.Tournament, matches: list, base_url: str) -> bytes:
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=1 * cm, bottomMargin=1.5 * cm,
+                            leftMargin=1.5 * cm, rightMargin=1.5 * cm)
+    doc.build(_team_page_story(team, tournament, matches, base_url))
     buf.seek(0)
     return buf.read()
 
@@ -350,78 +383,13 @@ def generate_urkunde_pdf(rankings: list, tournament: models.Tournament) -> bytes
 
 def generate_all_teams_pdf(teams: list, tournament: models.Tournament, matches_by_team: dict, base_url: str) -> bytes:
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=1*cm, bottomMargin=1.5*cm,
-                            leftMargin=1.5*cm, rightMargin=1.5*cm)
-    title_style, heading_style, body_style, pin_style = _get_styles()
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=1 * cm, bottomMargin=1.5 * cm,
+                            leftMargin=1.5 * cm, rightMargin=1.5 * cm)
     story = []
-
     for i, team in enumerate(teams):
         if i > 0:
-            from reportlab.platypus import PageBreak
             story.append(PageBreak())
-
-        matches = matches_by_team.get(team.id, [])
-
-        header_data = [[Paragraph(
-            f"<b>{tournament.name}</b>",
-            ParagraphStyle("H", fontName="Helvetica-Bold", fontSize=20, textColor=colors.white, alignment=TA_CENTER)
-        )]]
-        header_table = Table(header_data, colWidths=[18*cm])
-        header_table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, -1), FW_RED),
-            ("TOPPADDING", (0, 0), (-1, -1), 14),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 14),
-        ]))
-        story.append(header_table)
-        story.append(Spacer(1, 0.5*cm))
-
-        date_str = tournament.date.strftime("%d.%m.%Y") if tournament.date else ""
-        story.append(Paragraph(f"Datum: {date_str}", body_style))
-        story.append(Paragraph(f"<b>Team:</b> {team.name}", heading_style))
-        story.append(Paragraph(f"Gruppe: Feld {team.field_group}", body_style))
-        story.append(Spacer(1, 0.3*cm))
-
-        story.append(Paragraph("Ihr PIN:", body_style))
-        story.append(Paragraph(team.pin, pin_style))
-        story.append(Spacer(1, 0.3*cm))
-
-        url = f"{base_url}/turnier/{tournament.slug}/team/{team.id}?pin={team.pin}"
-        qr_buf = _make_qr(url)
-        qr_img = Image(qr_buf, width=4*cm, height=4*cm)
-        qr_table = Table([[qr_img, Paragraph(
-            f"Scannen Sie den QR-Code für Ihren Spielplan.<br/><br/>"
-            f"<font size='8'>{url}</font>",
-            body_style
-        )]], colWidths=[4.5*cm, 13.5*cm])
-        qr_table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE")]))
-        story.append(qr_table)
-        story.append(Spacer(1, 0.5*cm))
-
-        story.append(Paragraph("Euer Spielplan", heading_style))
-        if matches:
-            table_data = [["Zeit", "Feld", "Gegner"]]
-            for m in matches:
-                time_str = m.scheduled_time.strftime("%H:%M") if m.scheduled_time else "-"
-                if m.team_a_id == team.id:
-                    opponent = m.team_b.name if m.team_b else (m.team_b_placeholder or "?")
-                else:
-                    opponent = m.team_a.name if m.team_a else (m.team_a_placeholder or "?")
-                table_data.append([time_str, str(m.field_number), opponent])
-            t = Table(table_data, colWidths=[3*cm, 3*cm, 12*cm])
-            t.setStyle(TableStyle([
-                ("BACKGROUND", (0, 0), (-1, 0), FW_RED),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 0), (-1, -1), 10),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, FW_LIGHT]),
-                ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
-                ("TOPPADDING", (0, 0), (-1, -1), 5),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-            ]))
-            story.append(t)
-        else:
-            story.append(Paragraph("Noch kein Spielplan generiert.", body_style))
-
+        story.extend(_team_page_story(team, tournament, matches_by_team.get(team.id, []), base_url))
     doc.build(story)
     buf.seek(0)
     return buf.read()
