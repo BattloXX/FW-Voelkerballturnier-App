@@ -14,8 +14,8 @@ Entwickelt mit FastAPI, MariaDB und Jinja2-Templates – optimiert für Tablets 
 | **Spielplan** | Öffentlich | Live-Spielplan aller Runden mit automatischer Aktualisierung alle 30 Sekunden |
 | **Rangliste** | Öffentlich | Endrangliste, Zwischenrunden- und Vorrunden-Tabellen pro Feld |
 | **Spielregeln** | Öffentlich | Formatierte Spielregeln (Markdown) |
-| **Team-Seite** | QR-Code + PIN | Teams sehen ihren Spielplan, aktuelle Platzierung, können Organisation und Spielerliste eintragen (einmalig gesperrt) |
-| **Infoscreen** | Öffentlich | Großbildschirm-Ansicht für TV/Beamer mit Live-Rangliste, laufenden Spielen und Ergebnissen (30s Auto-Refresh) |
+| **Team-Seite** | QR-Code + PIN | Teams sehen Spielplan, aktuelle Platzierung und tragen ihre Spielerliste ein (einmalig, danach gesperrt) |
+| **Infoscreen** | Öffentlich | Vollbild-Anzeige für TV/Beamer mit Live-Rangliste, laufenden Spielen und Ergebnissen (30s Auto-Refresh) |
 | **Schiedsrichter** | Login | Ergebniseingabe per Tablet, große Touch-freundliche Buttons |
 | **Administration** | Login | Vollständige Turnierverwaltung inkl. Rangliste, editierbarem Spielplan und PDF-Export |
 
@@ -93,6 +93,8 @@ Beim ersten Start wird automatisch ein Superadmin-Account angelegt:
 
 **Passwort sofort unter `/admin/benutzer` ändern!**
 
+> Neue Datenbankspalten werden beim Start automatisch per `ALTER TABLE` ergänzt – kein manuelles Schema-Update nötig.
+
 ---
 
 ## URLs
@@ -105,7 +107,7 @@ Beim ersten Start wird automatisch ein Superadmin-Account angelegt:
 | `/turnier/<slug>/spielplan` | Spielplan aller Runden (Live-Updates) |
 | `/turnier/<slug>/rangliste` | Rangliste – Endrangliste, Zwischenrunde, Vorrunde |
 | `/turnier/<slug>/regeln` | Spielregeln |
-| `/turnier/<slug>/team/<id>?pin=<pin>` | Team-Selbstverwaltung via QR-Code |
+| `/turnier/<slug>/team/<id>?pin=<pin>` | Team-Selbstverwaltung via QR-Code oder Header-Login |
 | `/infoscreen` | Infoscreen (leitet zum ersten aktiven Turnier weiter) |
 | `/infoscreen/<slug>` | Vollbild-Infoscreen für TV/Beamer |
 | `/api/infoscreen/<slug>` | JSON-API für Infoscreen-Polling |
@@ -127,8 +129,10 @@ Beim ersten Start wird automatisch ein Superadmin-Account angelegt:
 | `/admin/turnier/<id>/spielplan` | Spielplan bearbeiten & Ergebnisse korrigieren |
 | `/admin/turnier/<id>/spielplan/pdf` | Spielplan als PDF exportieren |
 | `/admin/turnier/<id>/rangliste` | Rangliste aller Runden mit Korrekturmöglichkeit |
+| `/admin/turnier/<id>/team/<team_id>/spieler` | Spielerliste eines Teams bearbeiten (Admin) |
 | `/admin/turnier/<id>/pdf/alle` | Alle Team-PDFs als Sammel-PDF |
 | `/admin/turnier/<id>/urkunden` | Urkunden-PDF für alle Teilnehmer |
+| `/infoscreen/<slug>` | Vollbild-Infoscreen (auch direkt verknüpft im Admin) |
 | `/admin/benutzer` | Benutzerverwaltung (nur Superadmin) |
 
 ---
@@ -136,17 +140,17 @@ Beim ersten Start wird automatisch ein Superadmin-Account angelegt:
 ## Turnierdurchführung – Ablauf
 
 ### Vorbereitung (vor dem Turnier)
-1. **Admin-Login** → Neues Turnier erstellen (inkl. Startzeiten, Spielzeiten, Punkteregeln)
-2. **Teams anlegen** → Name + Feld-Gruppe zuweisen (PIN wird automatisch generiert)
+1. **Admin-Login** → Neues Turnier erstellen (Startzeiten, Spielzeiten, Punkteregeln konfigurieren)
+2. **Teams anlegen** → Name, Organisation (z.B. „FF Dornbirn") und Feld-Gruppe eingeben; PIN wird automatisch generiert
 3. **Spielplan generieren** → Button „Spielplan generieren"
-4. **Team-PDFs drucken** → Pro Team ein A4-Blatt mit QR-Code, PIN und eigenem Spielplan (`/admin/turnier/<id>/pdf/alle`)
-5. Teams können per QR-Code oder über den **Team-Login** im Header (Team-ID + PIN) ihre **Organisation** und **Spielerliste** eintragen. Die Spielerliste wird nach dem ersten Einreichen gesperrt und kann nur noch vom Admin geändert werden.
+4. **Team-PDFs drucken** → Pro Team ein A4-Blatt mit QR-Code, PIN, Team-ID und Spielplan (`/admin/turnier/<id>/pdf/alle`)
+5. Teams tragen ihre **Spielerliste** (bis zu 10 Spieler mit Name und Trikotnummer) einmalig über die Team-Seite ein. Nach dem Einreichen ist die Liste gesperrt; nur Admins können sie noch ändern.
 
 ### Während des Turniers
-1. **Schiedsrichter** melden sich unter `/schiri/login` an (Link im Footer der Website)
-2. Feld auswählen → nächstes Spiel starten → verbleibende Spieler am Spielende eingeben
-3. **Live-Anzeige** auf Beamer oder öffentlichem Bildschirm: `/turnier/<slug>/spielplan`
-4. Die **Rangliste** aktualisiert sich automatisch – Aufstiegsplätze werden grün markiert
+1. **Schiedsrichter** melden sich über den **„Schiedsrichter"**-Button im Footer an
+2. Feld auswählen → Spiel starten → verbleibende Spieler am Ende eingeben
+3. **Infoscreen** für TV/Beamer: `/infoscreen` – aktualisiert sich automatisch alle 30 Sekunden
+4. Die **Rangliste** aktualisiert sich live – Aufstiegsplätze werden grün markiert
 
 ### Nach der Vorrunde
 1. Admin-Bereich → **Spielplan** → Button **„⚡ Teams einsetzen"**
@@ -155,7 +159,7 @@ Beim ersten Start wird automatisch ein Superadmin-Account angelegt:
 
 ### Nach dem Turnier
 1. **Urkunden drucken** → `/admin/turnier/<id>/urkunden`
-2. Jedes Team erhält eine eigene Urkunde im Querformat mit Platzierung, Teamname, Spielerliste, Glückwunsch-Text, Feuerwehr-Logo und Unterschriftszeilen
+2. Jedes Team erhält eine Urkunde im Querformat mit Platzierung, Teamname, Organisation, Spielerliste, Glückwunsch-Text, Feuerwehr-Logo und Unterschriftszeilen
 
 ---
 
@@ -189,6 +193,36 @@ Beim ersten Start wird automatisch ein Superadmin-Account angelegt:
 
 ---
 
+## Team-Login im Header
+
+Auf jeder öffentlichen Seite gibt es den **„👥 Team"**-Button im Header:
+
+- Dropdown mit allen Teams des aktiven Turniers – kein Eintippen einer ID nötig
+- PIN eingeben → direkt zur eigenen Team-Seite
+- Alternativ: QR-Code vom Team-PDF scannen (öffnet die Seite direkt)
+
+Die Team-ID ist zusätzlich auf dem PDF-Ausdruck vermerkt (für manuelle Eingabe, falls kein Dropdown verfügbar ist).
+
+---
+
+## Spielerliste (einmalige Eingabe)
+
+- Teams tragen bis zu **10 Spieler** (Name + Trikotnummer) einmalig über ihre Team-Seite ein
+- Vor dem Speichern muss per Checkbox bestätigt werden, dass die Liste vollständig ist
+- Nach dem Einreichen ist die Liste **gesperrt** – das Team kann sie nicht mehr ändern
+- **Admin kann Spieler jederzeit bearbeiten** und die Sperre aufheben oder neu setzen: `/admin/turnier/<id>/team/<team_id>/spieler`
+- In der Admin-Übersicht zeigt ein Symbol den Status: 🔒 = gesperrt, 📋 = eingetragen (offen), — = noch keine Spieler
+
+---
+
+## Organisation / Verein
+
+- Wird beim **Anlegen eines Teams** im Admin direkt mitgepflegt (z.B. „FF Lauterach")
+- Kann jederzeit in der Team-Tabelle des Admins geändert werden (inline, Enter zum Speichern)
+- Erscheint in der Team-Seite im Header, in Spielplan- und Ranglisten-Tabellen als kleiner Hinweis sowie auf der **Urkunde** unterhalb des Teamnamens
+
+---
+
 ## Spielplan editieren (Admin)
 
 Im Admin-Spielplan (`/admin/turnier/<id>/spielplan`) kann jedes Spiel über den ✏️-Button bearbeitet werden:
@@ -212,60 +246,36 @@ Die Admin-Rangliste (`/admin/turnier/<id>/rangliste`) zeigt:
 
 ---
 
-## PDF-Ausgaben
-
-### Spielplan-PDF
-- Alle Runden auf einen Blick (Vorrunde, Zwischenrunde, Platzierungsspiele)
-- Druckbar als A4-Seite mit Ergebnissen und Status
-
-### Team-Ausdruck (vor dem Turnier)
-- Ein A4-Blatt pro Team
-- Enthält: Teamname, Feld-Gruppe, PIN, QR-Code zur Team-Seite, Spielplan
-
-### Urkunden (nach dem Turnier)
-- Querformat A4, eine Seite pro Team
-- Enthält: Feuerwehr-Logo, Turniername, Datum, Platzierung (Gold/Silber/Bronze), Teamname, Organisation (falls angegeben), Spielerliste mit Trikotnummern, individueller Glückwunsch-Text, Unterschriftszeilen
-- Alle teilnehmenden Teams erhalten eine Urkunde
-
----
-
 ## Infoscreen (TV/Beamer)
 
 Die Seite `/infoscreen/<slug>` ist als Vollbild-Großbildschirm-Anzeige ausgelegt:
 
 - **Drei Spalten:** Rangliste (links) · Laufende Spiele + Nächste Spiele (Mitte) · Letzte Ergebnisse (rechts)
-- **Live-Uhr** und LIVE-Indikator im Header
-- **Automatische Aktualisierung** alle 30 Sekunden via AJAX-Polling
-- Kein Login nötig, URL direkt im Browser öffnen: `/infoscreen` leitet auf das aktive Turnier weiter
+- **Live-Uhr** und LIVE-Indikator im roten Header
+- **Automatische Aktualisierung** alle 30 Sekunden via AJAX
+- Organisation wird unter dem Teamnamen angezeigt
+- Kein Login nötig – `/infoscreen` leitet automatisch auf das aktive Turnier weiter
+- Direktlink im Admin-Panel unter jedem Turnier (📺 Infoscreen)
 
 ---
 
-## Team-Login im Header
+## PDF-Ausgaben
 
-Teams können sich auf jeder öffentlichen Seite über den **„👥 Team"**-Button im Header einloggen:
+### Spielplan-PDF
+- Alle Runden auf einen Blick (Vorrunde, Zwischenrunde, Platzierungsspiele)
+- A4, druckfertig mit Ergebnissen und Status
 
-1. **Team-ID** eingeben (steht auf dem Team-PDF-Ausdruck)
-2. **PIN** eingeben (4-stellig, steht ebenfalls auf dem Ausdruck)
-3. Direkt zur eigenen Team-Seite mit Spielplan und Spielerlisten-Eingabe
+### Team-Ausdruck (vor dem Turnier)
+- Ein A4-Blatt pro Team – sauberes 2-spaltiges Layout
+- **Links:** Teamname (groß), Organisation, Datum, Feld, PIN (groß, rot)
+- **Rechts:** QR-Code (5,5 cm), Team-ID zur manuellen Eingabe
+- Darunter: eigener Spielplan als Tabelle
+- Sammel-PDF aller Teams: `/admin/turnier/<id>/pdf/alle`
 
-Alternativ funktioniert der QR-Code auf dem Team-PDF direkt.
-
----
-
-## Spielerliste (einmalige Eingabe)
-
-- Teams tragen ihre **Spielerliste** (Name + Trikotnummer) einmalig über ihre Team-Seite ein
-- Nach dem Einreichen wird die Liste **gesperrt** und kann vom Team nicht mehr geändert werden
-- **Admin kann Spieler jederzeit bearbeiten** über `/admin/turnier/<id>/team/<team_id>/spieler`
-- Im Admin-Übersicht zeigt ein Symbol den Status: 🔒 = gesperrt, 📋 = eingetragen (noch offen)
-
----
-
-## Organisation / Verein
-
-- Teams können ihre **Organisation** (z.B. „Feuerwehr Lauterach") auf ihrer Team-Seite eintragen (jederzeit änderbar)
-- Admins können die Organisation auch direkt in der Team-Tabelle pflegen
-- Die Organisation erscheint unter dem Teamnamen auf der **Urkunde**
+### Urkunden (nach dem Turnier)
+- Querformat A4, eine Seite pro Team
+- Enthält: Feuerwehr-Logo, Turniername, Datum, Platzierung (🥇🥈🥉), Teamname, Organisation, Spielerliste mit Trikotnummern, individueller Glückwunsch-Text, Unterschriftszeilen
+- Alle teilnehmenden Teams erhalten eine Urkunde
 
 ---
 
@@ -285,10 +295,10 @@ systemctl restart voelkerball
 ### Häufige Probleme
 
 **Neue Datenbankspalten nach Update:**  
-Nach einem Update mit neuen Modell-Feldern müssen diese manuell per `ALTER TABLE` ergänzt werden, da kein automatisches Schema-Migration-Tool verwendet wird.
+Neue Spalten werden beim App-Start automatisch per `ALTER TABLE` ergänzt (idempotent, schlägt bei bereits vorhandener Spalte lautlos fehl). Kein manuelles Eingreifen nötig.
 
 **Punktesystem bei bestehenden Turnieren:**  
-Nach dem Update auf das neue 3-1-0-System haben bestehende Turniere noch die alten Werte (Sieg=2, Niederlage=1) in der Datenbank. Diese können unter `/admin/turnier/<id>/bearbeiten` auf 3/0 aktualisiert werden.
+Bestehende Turniere können die alten Punktewerte haben. Unter `/admin/turnier/<id>/bearbeiten` auf 3 / 1 / 0 aktualisieren.
 
 **bcrypt-Kompatibilität:**  
 `bcrypt==4.0.1` ist in `requirements.txt` fixiert. Nicht auf neuere Versionen updaten, solange passlib 1.7.4 verwendet wird.
