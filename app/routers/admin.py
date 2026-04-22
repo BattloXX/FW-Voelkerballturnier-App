@@ -295,6 +295,7 @@ def rename_team_admin(
     team_id: int,
     request: Request,
     name: str = Form(...),
+    organization: str = Form(""),
     db: Session = Depends(get_db)
 ):
     user = _get_admin_user(request, db)
@@ -303,8 +304,62 @@ def rename_team_admin(
     team = db.query(models.Team).filter(models.Team.id == team_id).first()
     if team:
         team.name = name.strip()
+        team.organization = organization.strip() or None
         db.commit()
     return RedirectResponse(url=f"/admin/turnier/{tournament_id}", status_code=303)
+
+
+@router.get("/turnier/{tournament_id}/team/{team_id}/spieler", response_class=HTMLResponse)
+def admin_team_players_get(tournament_id: int, team_id: int, request: Request, db: Session = Depends(get_db)):
+    user = _get_admin_user(request, db)
+    if not user:
+        return RedirectResponse(url="/admin/login", status_code=303)
+    t = db.query(models.Tournament).filter(models.Tournament.id == tournament_id).first()
+    team = db.query(models.Team).filter(
+        models.Team.id == team_id, models.Team.tournament_id == tournament_id
+    ).first()
+    if not t or not team:
+        raise HTTPException(status_code=404)
+    saved = request.query_params.get("saved")
+    return templates.TemplateResponse("admin/team_players.html", {
+        "request": request, "user": user, "tournament": t, "team": team,
+        "max_players": 6, "saved": saved,
+    })
+
+
+@router.post("/turnier/{tournament_id}/team/{team_id}/spieler")
+async def admin_team_players_post(
+    tournament_id: int, team_id: int, request: Request,
+    db: Session = Depends(get_db)
+):
+    user = _get_admin_user(request, db)
+    if not user:
+        return RedirectResponse(url="/admin/login", status_code=303)
+    t = db.query(models.Tournament).filter(models.Tournament.id == tournament_id).first()
+    team = db.query(models.Team).filter(
+        models.Team.id == team_id, models.Team.tournament_id == tournament_id
+    ).first()
+    if not t or not team:
+        raise HTTPException(status_code=404)
+    form = await request.form()
+
+    db.query(models.Player).filter(models.Player.team_id == team_id).delete()
+    count = 0
+    for i in range(1, 7):
+        name = form.get(f"spieler_name_{i}", "").strip()
+        nummer_raw = form.get(f"spieler_nummer_{i}", "").strip()
+        if not name:
+            continue
+        jersey = int(nummer_raw) if nummer_raw.isdigit() else None
+        db.add(models.Player(team_id=team_id, name=name, jersey_number=jersey))
+        count += 1
+
+    team.players_locked = form.get("players_locked", "") == "1"
+    db.commit()
+    return RedirectResponse(
+        url=f"/admin/turnier/{tournament_id}/team/{team_id}/spieler?saved={count}",
+        status_code=303
+    )
 
 
 # Schedule

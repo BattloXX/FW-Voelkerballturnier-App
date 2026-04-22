@@ -1,6 +1,6 @@
 import markdown
 import bleach
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Form
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -13,10 +13,27 @@ router = APIRouter()
 ALLOWED_TAGS = ["p", "br", "b", "strong", "em", "i", "ul", "ol", "li", "h1", "h2", "h3", "h4", "blockquote"]
 
 
+@router.post("/team/login")
+def team_login(
+    team_id: int = Form(...),
+    pin: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    team = db.query(models.Team).filter(models.Team.id == team_id).first()
+    pin = pin.strip()
+    if not team or team.pin != pin:
+        return RedirectResponse(url="/?team_error=1", status_code=303)
+    t = db.query(models.Tournament).filter(models.Tournament.id == team.tournament_id).first()
+    if not t:
+        return RedirectResponse(url="/?team_error=1", status_code=303)
+    return RedirectResponse(url=f"/turnier/{t.slug}/team/{team_id}?pin={pin}", status_code=303)
+
+
 @router.get("/", response_class=HTMLResponse)
 def index(request: Request, db: Session = Depends(get_db)):
     tournaments = db.query(models.Tournament).order_by(models.Tournament.date.desc()).all()
-    return templates.TemplateResponse("index.html", {"request": request, "tournaments": tournaments})
+    team_error = request.query_params.get("team_error")
+    return templates.TemplateResponse("index.html", {"request": request, "tournaments": tournaments, "team_error": team_error})
 
 
 @router.get("/turnier/{slug}", response_class=HTMLResponse)

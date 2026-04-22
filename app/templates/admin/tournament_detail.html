@@ -56,7 +56,7 @@
     <table>
       <thead>
         <tr>
-          <th>Teamname</th>
+          <th>Teamname / Organisation</th>
           <th>Feld</th>
           <th>PIN</th>
           <th>Spieler</th>
@@ -69,20 +69,29 @@
         <tr>
           <td>
             <form method="post" action="/admin/turnier/{{ tournament.id }}/team/{{ team.id }}/umbenennen"
-                  style="display:flex;gap:.35rem">
-              <input type="text" name="name" value="{{ team.name }}" class="form-control" style="min-width:120px;padding:.35rem .6rem;font-size:.875rem">
-              <button type="submit" class="btn btn-secondary btn-sm">✓</button>
+                  style="display:grid;gap:.3rem">
+              <div style="display:flex;gap:.35rem">
+                <input type="text" name="name" value="{{ team.name }}" class="form-control" style="min-width:120px;padding:.35rem .6rem;font-size:.875rem">
+                <button type="submit" class="btn btn-secondary btn-sm">✓</button>
+              </div>
+              <input type="text" name="organization" value="{{ team.organization or '' }}" class="form-control"
+                     placeholder="Organisation (z.B. FF Lauterach)" style="padding:.25rem .6rem;font-size:.8rem;color:#555">
             </form>
           </td>
           <td><span class="tag">Feld {{ team.field_group }}</span></td>
           <td><code style="font-size:1rem;font-weight:700;letter-spacing:.1em;color:var(--red)">{{ team.pin }}</code></td>
-          <td style="font-size:.85rem;color:#7a7a7a">
+          <td style="white-space:nowrap">
             {% if team.players %}
-              {{ team.players | length }} Spieler
-              <span style="color:#c8c8c8">({% for p in team.players %}{% if p.jersey_number %}#{{ p.jersey_number }} {% endif %}{{ p.name }}{% if not loop.last %}, {% endif %}{% endfor %})</span>
+              {% if team.players_locked %}
+              <span class="badge badge-active" title="Spielerliste gesperrt">🔒 {{ team.players | length }}</span>
+              {% else %}
+              <span class="badge badge-pending" title="Spielerliste offen">📋 {{ team.players | length }}</span>
+              {% endif %}
             {% else %}
-              <span style="color:#c8c8c8">keine Spieler</span>
+              <span style="color:#c8c8c8;font-size:.85rem">—</span>
             {% endif %}
+            <a href="/admin/turnier/{{ tournament.id }}/team/{{ team.id }}/spieler"
+               class="btn btn-secondary btn-sm" style="margin-left:.3rem" title="Spieler bearbeiten">✏️</a>
           </td>
           <td>
             <a href="/turnier/{{ tournament.slug }}/team/{{ team.id }}?pin={{ team.pin }}"

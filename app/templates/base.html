@@ -6,6 +6,7 @@
   <title>{% block title %}Völkerball Turnier-Manager{% endblock %}</title>
   <meta name="description" content="{% block description %}Blaulicht Völkerball Turnier – Feuerwehr Wolfurt{% endblock %}">
   <meta property="og:image" content="https://feuerwehr.wolfurt.at/wp-content/uploads/2015/02/cropped-logo-feuerwehr-aktiv-150x150.jpg">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏐</text></svg>">
   <link rel="stylesheet" href="/static/css/style.css">
   {% block extra_head %}{% endblock %}
 </head>
@@ -50,6 +51,24 @@
         {% endblock %}
       </nav>
 
+      <div class="team-login-wrap">
+        <button class="team-login-btn" id="tl-btn" type="button">👥 Team</button>
+        <div class="team-login-dropdown" id="tl-drop">
+          <div class="tl-title">Team-Anmeldung</div>
+          <form method="post" action="/team/login">
+            <div style="margin-bottom:.5rem">
+              <label style="font-size:.75rem;color:#666;display:block;margin-bottom:.2rem;font-weight:600">Team-ID</label>
+              <input type="number" name="team_id" class="form-control" placeholder="z.B. 42" required style="padding:.35rem .6rem;font-size:.875rem">
+            </div>
+            <div style="margin-bottom:.75rem">
+              <label style="font-size:.75rem;color:#666;display:block;margin-bottom:.2rem;font-weight:600">PIN</label>
+              <input type="text" name="pin" class="form-control" placeholder="1234" maxlength="4" inputmode="numeric" autocomplete="off" required style="padding:.35rem .6rem;font-size:.875rem;letter-spacing:.15em;font-weight:700">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;font-size:.875rem">→ Zum Teambereich</button>
+          </form>
+        </div>
+      </div>
+
       <button class="hamburger" id="hamburger" aria-label="Menü öffnen">
         <span></span><span></span><span></span>
       </button>
@@ -78,6 +97,15 @@
     {% endfor %}
   {% endif %}
   {% endblock %}
+
+  <div class="mobile-team-login">
+    <div class="mobile-tl-label">Team-Anmeldung</div>
+    <form method="post" action="/team/login">
+      <input type="number" name="team_id" placeholder="Team-ID" class="form-control mobile-tl-input" required>
+      <input type="text" name="pin" placeholder="PIN" maxlength="4" inputmode="numeric" autocomplete="off" class="form-control mobile-tl-input mobile-tl-pin" required>
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.4rem">→ Zum Teambereich</button>
+    </form>
+  </div>
 </nav>
 
 <main>
@@ -89,14 +117,25 @@
     <div class="footer-inner">
       <span>Feuerwehr Wolfurt &nbsp;|&nbsp; Blaulicht Völkerball Turnier-Manager</span>
       <span class="footer-links">
-        <a href="/admin/dashboard">Admin</a>
-        <a href="/schiri/login">Schiedsrichter</a>
+        <a href="/admin/dashboard" class="footer-btn">Admin</a>
+        <a href="/schiri/login" class="footer-btn">Schiedsrichter</a>
       </span>
     </div>
   </div>
 </footer>
 
 <script src="/static/js/live_update.js"></script>
+<script>
+(function () {
+  var btn = document.getElementById('tl-btn');
+  var drop = document.getElementById('tl-drop');
+  if (btn && drop) {
+    btn.addEventListener('click', function (e) { e.stopPropagation(); drop.classList.toggle('open'); });
+    document.addEventListener('click', function () { drop.classList.remove('open'); });
+    drop.addEventListener('click', function (e) { e.stopPropagation(); });
+  }
+})();
+</script>
 {% block extra_scripts %}{% endblock %}
 </body>
 </html>

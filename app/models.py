@@ -66,8 +66,10 @@ class Team(Base):
     id = Column(Integer, primary_key=True, index=True)
     tournament_id = Column(Integer, ForeignKey("tournaments.id"), nullable=False)
     name = Column(String(200), nullable=False)
+    organization = Column(String(200), nullable=True)
     field_group = Column(Integer, nullable=False)
     pin = Column(String(10), nullable=False)
+    players_locked = Column(Boolean, default=False)
     created_at = Column(DateTime, server_default=func.now())
 
     tournament = relationship("Tournament", back_populates="teams")

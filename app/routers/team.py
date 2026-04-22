@@ -36,6 +36,7 @@ def team_self_service(slug: str, team_id: int, pin: str, request: Request, db: S
     my_rank = next((s for s in standings if s.team_id == team_id), None)
 
     saved = request.query_params.get("saved")
+    saved_org = request.query_params.get("saved_org")
     error = request.query_params.get("error")
 
     return templates.TemplateResponse("team/self_service.html", {
@@ -49,6 +50,7 @@ def team_self_service(slug: str, team_id: int, pin: str, request: Request, db: S
         "standings": standings,
         "max_players": MAX_PLAYERS,
         "saved": saved,
+        "saved_org": saved_org,
         "error": error,
     })
 
@@ -80,6 +82,12 @@ async def save_players(
             status_code=303
         )
 
+    if team.players_locked and team.players:
+        return RedirectResponse(
+            url=f"/turnier/{slug}/team/{team_id}?pin={pin}&error=locked",
+            status_code=303
+        )
+
     # Alle bisherigen Spieler löschen und neu einlesen
     db.query(models.Player).filter(models.Player.team_id == team_id).delete()
 
@@ -97,8 +105,42 @@ async def save_players(
         ))
         count += 1
 
+    if count > 0:
+        team.players_locked = True
     db.commit()
     return RedirectResponse(
         url=f"/turnier/{slug}/team/{team_id}?pin={pin}&saved={count}",
+        status_code=303
+    )
+
+
+@router.post("/turnier/{slug}/team/{team_id}/organisation", response_class=HTMLResponse)
+async def save_organisation(
+    slug: str,
+    team_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    t = db.query(models.Tournament).filter(models.Tournament.slug == slug).first()
+    if not t:
+        raise HTTPException(status_code=404)
+    team = db.query(models.Team).filter(
+        models.Team.id == team_id,
+        models.Team.tournament_id == t.id
+    ).first()
+    if not team:
+        raise HTTPException(status_code=404)
+    form = await request.form()
+    pin = form.get("pin", "")
+    if team.pin != pin:
+        return RedirectResponse(
+            url=f"/turnier/{slug}/team/{team_id}?pin={pin}&error=pin",
+            status_code=303
+        )
+    org = form.get("organization", "").strip()
+    team.organization = org or None
+    db.commit()
+    return RedirectResponse(
+        url=f"/turnier/{slug}/team/{team_id}?pin={pin}&saved_org=1",
         status_code=303
     )

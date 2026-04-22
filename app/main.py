@@ -27,6 +27,8 @@ def _migrate_schema():
     with engine.connect() as conn:
         pending = [
             "ALTER TABLE tournaments ADD COLUMN points_draw INT NOT NULL DEFAULT 1",
+            "ALTER TABLE teams ADD COLUMN players_locked TINYINT(1) NOT NULL DEFAULT 0",
+            "ALTER TABLE teams ADD COLUMN organization VARCHAR(200) NULL",
         ]
         for sql in pending:
             try:

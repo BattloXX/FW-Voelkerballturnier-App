@@ -276,11 +276,16 @@ def generate_urkunde_pdf(rankings: list, tournament: models.Tournament) -> bytes
         story.append(HRFlowable(width="100%", thickness=2, color=accent, spaceAfter=0.4*cm))
 
         # Rank + Team name
+        org_style = ParagraphStyle(
+            "CertOrg", fontName="Helvetica", fontSize=13,
+            textColor=FW_DARK, alignment=TA_CENTER, leading=17, spaceAfter=2,
+        )
         rank_label = RANK_LABELS.get(rank, f"{rank}. Platz")
         rank_block = [Paragraph(str(rank), rank_style), Paragraph(rank_label, rank_label_style)]
-        team_block = [
-            Spacer(1, 0.3*cm),
-            Paragraph(team.name, team_style),
+        team_block = [Spacer(1, 0.3*cm), Paragraph(team.name, team_style)]
+        if getattr(team, "organization", None):
+            team_block.append(Paragraph(team.organization, org_style))
+        team_block += [
             Spacer(1, 0.2*cm),
             Paragraph(CONGRATS.get(rank, CONGRATS_DEFAULT), congrats_style),
         ]

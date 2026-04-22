@@ -1180,7 +1180,85 @@ select.form-control { cursor: pointer; }
 .site-footer a { color: rgba(255,255,255,.7); text-decoration: none; }
 .site-footer a:hover { color: #fff; }
 .footer-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; text-align: left; }
-.footer-links { display: flex; gap: 1.25rem; }
+.footer-links { display: flex; gap: .6rem; }
+.footer-btn {
+  display: inline-block;
+  padding: .22rem .65rem;
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 4px;
+  color: rgba(255,255,255,.75) !important;
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .03em;
+  text-decoration: none;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.footer-btn:hover {
+  background: rgba(255,255,255,.12);
+  color: #fff !important;
+  border-color: rgba(255,255,255,.5);
+}
+
+/* Team login dropdown */
+.team-login-wrap { position: relative; }
+.team-login-btn {
+  background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.3);
+  color: #fff;
+  border-radius: 5px;
+  padding: .38rem .75rem;
+  cursor: pointer;
+  font-size: .8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background .15s;
+  line-height: 1.2;
+}
+.team-login-btn:hover { background: rgba(255,255,255,.28); }
+.team-login-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + .6rem);
+  right: 0;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.16);
+  padding: 1.1rem;
+  min-width: 230px;
+  z-index: 300;
+  color: var(--anthracite);
+}
+.team-login-dropdown.open { display: block; }
+.team-login-dropdown .tl-title {
+  font-weight: 700;
+  font-size: .875rem;
+  margin-bottom: .85rem;
+  color: var(--anthracite);
+}
+
+/* Mobile nav team login */
+.mobile-team-login {
+  border-top: 1px solid rgba(255,255,255,.1);
+  margin: .5rem 0 0;
+  padding: .75rem 1rem 1rem;
+}
+.mobile-tl-label {
+  font-size: .7rem;
+  color: rgba(255,255,255,.4);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: .55rem;
+  font-weight: 600;
+}
+.mobile-tl-input {
+  background: rgba(255,255,255,.1) !important;
+  border-color: rgba(255,255,255,.25) !important;
+  color: #fff !important;
+  margin-bottom: .4rem;
+}
+.mobile-tl-input::placeholder { color: rgba(255,255,255,.4) !important; }
+.mobile-tl-pin { letter-spacing: .15em; font-weight: 700; }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */
 @media (min-width: 768px) {

@@ -1,0 +1,61 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Spieler – {{ team.name }} – Admin{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+  <div>
+    <h1 class="admin-page-title">{{ team.name }} – Spielerverwaltung</h1>
+    <div style="font-size:.85rem;color:#7a7a7a;margin-top:.2rem">
+      {{ tournament.name }} &nbsp;·&nbsp; Feld {{ team.field_group }}
+      {% if team.organization %}&nbsp;·&nbsp; {{ team.organization }}{% endif %}
+      &nbsp;·&nbsp; PIN: <code style="color:var(--red);font-weight:700">{{ team.pin }}</code>
+    </div>
+  </div>
+  <a href="/admin/turnier/{{ tournament.id }}" class="btn btn-secondary">← Zurück</a>
+</div>
+
+{% if saved is not none and saved %}
+<div class="alert alert-success">✅ {{ saved }} Spieler gespeichert.</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Spieler bearbeiten</div>
+    {% if team.players_locked %}
+    <span class="badge badge-active">🔒 Vom Team gesperrt</span>
+    {% else %}
+    <span class="badge badge-pending">🔓 Entsperrt</span>
+    {% endif %}
+  </div>
+  <form method="post" action="/admin/turnier/{{ tournament.id }}/team/{{ team.id }}/spieler">
+    <div style="display:grid;gap:.6rem;margin-bottom:1.25rem">
+      {% for i in range(1, max_players + 1) %}
+      {% set existing = team.players[i-1] if team.players and i <= team.players|length else none %}
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <span style="font-family:var(--font-head);font-size:1rem;font-weight:700;color:#ccc;width:1.5rem;text-align:center;flex-shrink:0">{{ i }}</span>
+        <input type="number" name="spieler_nummer_{{ i }}"
+               value="{{ existing.jersey_number if existing and existing.jersey_number is not none else '' }}"
+               placeholder="Nr." min="1" max="99" inputmode="numeric"
+               class="form-control" style="width:75px;flex-shrink:0;text-align:center;font-family:var(--font-head);font-weight:700;font-size:1rem">
+        <input type="text" name="spieler_name_{{ i }}"
+               value="{{ existing.name if existing else '' }}"
+               placeholder="Vorname Nachname" maxlength="80"
+               class="form-control" style="flex:1">
+      </div>
+      {% endfor %}
+    </div>
+
+    <div style="background:#f8f8f8;border:1px solid #ececec;border-radius:6px;padding:.75rem 1rem;margin-bottom:1rem">
+      <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;font-size:.875rem">
+        <input type="checkbox" name="players_locked" value="1" {% if team.players_locked %}checked{% endif %} style="width:15px;height:15px;flex-shrink:0">
+        <span>Spielerliste für Team gesperrt (Team kann nicht mehr ändern)</span>
+      </label>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">💾 Speichern</button>
+      <a href="/admin/turnier/{{ tournament.id }}" class="btn btn-secondary">Abbrechen</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
