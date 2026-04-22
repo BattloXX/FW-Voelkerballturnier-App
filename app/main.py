@@ -2,6 +2,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
+import sqlalchemy as sa
 from app.database import engine, Base, SessionLocal
 from app import models
 from app.routers import public, team, referee, admin
@@ -15,9 +16,24 @@ load_dotenv()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    _migrate_schema()
     _seed_superadmin()
     os.makedirs(os.getenv("UPLOAD_DIR", "static/uploads"), exist_ok=True)
     yield
+
+
+def _migrate_schema():
+    """Add missing columns to existing tables without a full migration tool."""
+    with engine.connect() as conn:
+        pending = [
+            "ALTER TABLE tournaments ADD COLUMN points_draw INT NOT NULL DEFAULT 1",
+        ]
+        for sql in pending:
+            try:
+                conn.execute(sa.text(sql))
+                conn.commit()
+            except Exception:
+                pass  # column already exists
 
 
 def _seed_superadmin():
