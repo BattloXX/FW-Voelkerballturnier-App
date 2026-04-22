@@ -160,8 +160,10 @@
         <div class="flex items-center gap-2">
           <span class="font-grotesk text-xs text-secondary flex-shrink-0 w-10">Gegner</span>
           <span class="font-lexend font-semibold text-sm flex-1">{{ opponent }}</span>
-          <span class="match-score font-grotesk font-bold text-sm text-primary flex-shrink-0">
-            {% if m.score_a is not none and m.score_b is not none %}
+          <span class="font-grotesk font-bold text-sm text-primary flex-shrink-0">
+            {% if m.status.value == 'active' and m.players_remaining_a is not none and m.players_remaining_b is not none %}
+              {% if m.team_a_id == team.id %}{{ m.players_remaining_a }} : {{ m.players_remaining_b }}{% else %}{{ m.players_remaining_b }} : {{ m.players_remaining_a }}{% endif %}
+            {% elif m.score_a is not none and m.score_b is not none %}
               {% if m.team_a_id == team.id %}{{ m.score_a }} : {{ m.score_b }}{% else %}{{ m.score_b }} : {{ m.score_a }}{% endif %}
             {% else %}<span class="text-gray-300">– : –</span>{% endif %}
           </span>
@@ -197,7 +199,9 @@
             </td>
             <td class="py-3 px-4 font-lexend font-semibold text-sm">{{ opponent }}</td>
             <td class="py-3 px-4 text-center font-grotesk font-bold text-primary">
-              {% if m.score_a is not none and m.score_b is not none %}
+              {% if m.status.value == 'active' and m.players_remaining_a is not none and m.players_remaining_b is not none %}
+                {% if m.team_a_id == team.id %}{{ m.players_remaining_a }} : {{ m.players_remaining_b }}{% else %}{{ m.players_remaining_b }} : {{ m.players_remaining_a }}{% endif %}
+              {% elif m.score_a is not none and m.score_b is not none %}
                 {% if m.team_a_id == team.id %}{{ m.score_a }} : {{ m.score_b }}
                 {% else %}{{ m.score_b }} : {{ m.score_a }}{% endif %}
               {% else %}<span class="text-gray-300">–</span>{% endif %}

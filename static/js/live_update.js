@@ -26,7 +26,9 @@
       document.querySelectorAll(`[data-match-id="${m.id}"]`).forEach(row => {
         const scoreEl = row.querySelector('.match-score');
         if (scoreEl) {
-          if (m.score_a !== null && m.score_b !== null) {
+          if (m.status === 'active' && m.players_remaining_a !== null && m.players_remaining_b !== null) {
+            scoreEl.textContent = `${m.players_remaining_a} : ${m.players_remaining_b}`;
+          } else if (m.status !== 'active' && m.score_a !== null && m.score_b !== null) {
             scoreEl.textContent = `${m.score_a} : ${m.score_b}`;
           }
         }

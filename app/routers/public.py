@@ -177,6 +177,8 @@ def live_data(slug: str, db: Session = Depends(get_db)):
             "team_b": team_b_name,
             "score_a": m.score_a,
             "score_b": m.score_b,
+            "players_remaining_a": m.players_remaining_a,
+            "players_remaining_b": m.players_remaining_b,
             "status": m.status.value,
         })
 
