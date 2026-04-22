@@ -347,7 +347,7 @@ async def admin_team_players_post(
 
     db.query(models.Player).filter(models.Player.team_id == team_id).delete()
     count = 0
-    for i in range(1, 7):
+    for i in range(1, 11):
         name = form.get(f"spieler_name_{i}", "").strip()
         nummer_raw = form.get(f"spieler_nummer_{i}", "").strip()
         if not name:

@@ -29,7 +29,7 @@
   </div>
   <form method="post" action="/admin/turnier/{{ tournament.id }}/team/{{ team.id }}/spieler">
     <div style="display:grid;gap:.6rem;margin-bottom:1.25rem">
-      {% for i in range(1, max_players + 1) %}
+      {% for i in range(1, 11) %}
       {% set existing = team.players[i-1] if team.players and i <= team.players|length else none %}
       <div style="display:flex;gap:.5rem;align-items:center">
         <span style="font-family:var(--font-head);font-size:1rem;font-weight:700;color:#ccc;width:1.5rem;text-align:center;flex-shrink:0">{{ i }}</span>

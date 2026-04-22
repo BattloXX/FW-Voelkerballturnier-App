@@ -9,7 +9,7 @@ from app.templates_config import templates
 
 router = APIRouter()
 
-MAX_PLAYERS = 6
+MAX_PLAYERS = 10
 
 
 @router.get("/turnier/{slug}/team/{team_id}", response_class=HTMLResponse)
