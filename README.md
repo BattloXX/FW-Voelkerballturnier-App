@@ -11,12 +11,12 @@ Entwickelt mit FastAPI, MariaDB und Jinja2-Templates – optimiert für Tablets 
 | Bereich | Zugang | Beschreibung |
 |---|---|---|
 | **Startseite** | Öffentlich | Übersicht aller Turniere mit Status |
-| **Spielplan** | Öffentlich | Live-Spielplan aller Runden (Vorrunde, Zwischenrunde, Platzierungsspiele) mit automatischer Aktualisierung alle 30 Sekunden |
-| **Rangliste** | Öffentlich | Endrangliste, Zwischenrunden-Tabellen und Vorrunden-Tabellen pro Feld |
+| **Spielplan** | Öffentlich | Live-Spielplan aller Runden mit automatischer Aktualisierung alle 30 Sekunden |
+| **Rangliste** | Öffentlich | Endrangliste, Zwischenrunden- und Vorrunden-Tabellen pro Feld |
 | **Spielregeln** | Öffentlich | Formatierte Spielregeln (Markdown) |
 | **Team-Seite** | QR-Code + PIN | Teams sehen ihren Spielplan, aktuelle Platzierung und können ihre Spielerliste eintragen |
 | **Schiedsrichter** | Login | Ergebniseingabe per Tablet, große Touch-freundliche Buttons |
-| **Administration** | Login | Vollständige Turnierverwaltung mit Spielplan-Generierung und PDF-Export |
+| **Administration** | Login | Vollständige Turnierverwaltung inkl. Rangliste, editierbarem Spielplan und PDF-Export |
 
 ---
 
@@ -30,8 +30,7 @@ Entwickelt mit FastAPI, MariaDB und Jinja2-Templates – optimiert für Tablets 
 ### 1. Dateien hochladen
 
 ```bash
-# Dateien nach /home/fwwo-voelkerball/htdocs/voelkerball.fwwo.at/ hochladen
-# z.B. via git clone https://github.com/BattloXX/FW-Voelkerballturnier-App.git .
+git clone https://github.com/BattloXX/FW-Voelkerballturnier-App.git .
 ```
 
 ### 2. Python-Umgebung einrichten
@@ -39,7 +38,6 @@ Entwickelt mit FastAPI, MariaDB und Jinja2-Templates – optimiert für Tablets 
 ```bash
 cd /home/fwwo-voelkerball/htdocs/voelkerball.fwwo.at
 
-# Als Site-User ausführen:
 su - fwwo-voelkerball -s /bin/bash
 python3 -m venv venv
 source venv/bin/activate
@@ -47,7 +45,7 @@ pip install -r requirements.txt
 exit
 ```
 
-### 3. Datenbank anlegen (in CloudPanel UI oder per CLI)
+### 3. Datenbank anlegen
 
 ```sql
 CREATE DATABASE voelkerball_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -62,8 +60,6 @@ cp .env.example .env
 nano .env
 ```
 
-Folgende Werte anpassen:
-
 ```env
 DATABASE_URL=mysql+pymysql://voelkerball:sicheres-passwort@localhost/voelkerball_db
 SECRET_KEY=langer-zufaelliger-schluessel
@@ -73,7 +69,6 @@ BASE_URL=https://voelkerball.fwwo.at
 ### 5. Systemd-Service installieren
 
 ```bash
-# Als root:
 cp voelkerball.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable voelkerball
@@ -125,9 +120,11 @@ Beim ersten Start wird automatisch ein Superadmin-Account angelegt:
 | `/admin/dashboard` | Übersicht aller Turniere |
 | `/admin/turnier/neu` | Neues Turnier erstellen |
 | `/admin/turnier/<id>` | Turnier verwalten (Teams, Spielplan) |
-| `/admin/turnier/<id>/spielplan` | Spielplan-Verwaltung & Ergebniskorrektur |
-| `/admin/turnier/<id>/pdf/alle` | Alle Team-PDFs als Sammel-PDF (Druck vor dem Turnier) |
-| `/admin/turnier/<id>/urkunden` | Urkunden-PDF für alle Teilnehmer (nach dem Turnier) |
+| `/admin/turnier/<id>/spielplan` | Spielplan bearbeiten & Ergebnisse korrigieren |
+| `/admin/turnier/<id>/spielplan/pdf` | Spielplan als PDF exportieren |
+| `/admin/turnier/<id>/rangliste` | Rangliste aller Runden mit Korrekturmöglichkeit |
+| `/admin/turnier/<id>/pdf/alle` | Alle Team-PDFs als Sammel-PDF |
+| `/admin/turnier/<id>/urkunden` | Urkunden-PDF für alle Teilnehmer |
 | `/admin/benutzer` | Benutzerverwaltung (nur Superadmin) |
 
 ---
@@ -135,15 +132,15 @@ Beim ersten Start wird automatisch ein Superadmin-Account angelegt:
 ## Turnierdurchführung – Ablauf
 
 ### Vorbereitung (vor dem Turnier)
-1. **Admin-Login** → Neues Turnier erstellen (inkl. Startzeiten für Zwischen- und Platzierungsrunde)
+1. **Admin-Login** → Neues Turnier erstellen (inkl. Startzeiten, Spielzeiten, Punkteregeln)
 2. **Teams anlegen** → Name + Feld-Gruppe zuweisen (PIN wird automatisch generiert)
 3. **Spielplan generieren** → Button „Spielplan generieren"
 4. **Team-PDFs drucken** → Pro Team ein A4-Blatt mit QR-Code, PIN und eigenem Spielplan (`/admin/turnier/<id>/pdf/alle`)
 5. Teams können per QR-Code ihre **Spielerliste** mit Namen und Trikotnummern selbst eintragen
 
 ### Während des Turniers
-1. **Schiedsrichter** melden sich unter `/schiri/login` an
-2. Feld auswählen → nächstes Spiel starten → Ergebnis (verbleibende Spieler) eingeben
+1. **Schiedsrichter** melden sich unter `/schiri/login` an (Link im Footer der Website)
+2. Feld auswählen → nächstes Spiel starten → verbleibende Spieler am Spielende eingeben
 3. **Live-Anzeige** auf Beamer oder öffentlichem Bildschirm: `/turnier/<slug>/spielplan`
 4. Die **Rangliste** aktualisiert sich automatisch – Aufstiegsplätze werden grün markiert
 
@@ -180,12 +177,42 @@ Beim ersten Start wird automatisch ein Superadmin-Account angelegt:
 - Alternativ: automatische Berechnung über konfigurierbare Pausenzeiten
 
 ### Wertung
-- **2 Punkte** für Sieg, **1 Punkt** für Niederlage (konfigurierbar pro Turnier)
-- Tiebreaker: Spieler-Differenz (abgeschossene Spieler)
+- **3 Punkte** für Sieg (Team mit mehr Spielern am Feld bei Spielende)
+- **1 Punkt** pro Team bei Unentschieden (gleich viele Spieler)
+- **0 Punkte** für Niederlage
+- Tiebreaker: Spieler-Differenz (mehr übrige Spieler = besser)
+- Punktewerte sind pro Turnier konfigurierbar
+
+---
+
+## Spielplan editieren (Admin)
+
+Im Admin-Spielplan (`/admin/turnier/<id>/spielplan`) kann jedes Spiel über den ✏️-Button bearbeitet werden:
+
+- **Uhrzeit** – geplante Anstoßzeit anpassen
+- **Feld** – Spielfeld ändern
+- **Runde** – zwischen Vorrunde, Zwischenrunde und Platzierungsspielen wechseln
+- **Teams** – Team A oder Team B austauschen
+
+Ergebnisse können direkt in der Spielplan-Zeile korrigiert werden: verbleibende Spieler beider Teams eingeben, Score wird automatisch berechnet.
+
+---
+
+## Rangliste (Admin)
+
+Die Admin-Rangliste (`/admin/turnier/<id>/rangliste`) zeigt:
+
+- Tabellen für alle Runden (Vorrunde pro Feld, Zwischenrunde, Platzierungsspiele)
+- Aufstiegsmarkierung (grün = qualifiziert, rot = ausgeschieden)
+- Vollständige Spielliste mit Inline-Korrektur-Modal pro Spiel
 
 ---
 
 ## PDF-Ausgaben
+
+### Spielplan-PDF
+- Alle Runden auf einen Blick (Vorrunde, Zwischenrunde, Platzierungsspiele)
+- Druckbar als A4-Seite mit Ergebnissen und Status
 
 ### Team-Ausdruck (vor dem Turnier)
 - Ein A4-Blatt pro Team
@@ -193,7 +220,7 @@ Beim ersten Start wird automatisch ein Superadmin-Account angelegt:
 
 ### Urkunden (nach dem Turnier)
 - Querformat A4, eine Seite pro Team
-- Enthält: Feuerwehr-Logo, Turniername, Datum, Platzierung (mit Goldfarbe für 1., Silber für 2., Bronze für 3.), Teamname, Spielerliste mit Trikotnummern, individueller Glückwunsch-Text, Unterschriftszeilen
+- Enthält: Feuerwehr-Logo, Turniername, Datum, Platzierung (Gold/Silber/Bronze), Teamname, Spielerliste mit Trikotnummern, individueller Glückwunsch-Text, Unterschriftszeilen
 - Alle teilnehmenden Teams erhalten eine Urkunde
 
 ---
@@ -215,6 +242,9 @@ systemctl restart voelkerball
 
 **Neue Datenbankspalten nach Update:**  
 Nach einem Update mit neuen Modell-Feldern müssen diese manuell per `ALTER TABLE` ergänzt werden, da kein automatisches Schema-Migration-Tool verwendet wird.
+
+**Punktesystem bei bestehenden Turnieren:**  
+Nach dem Update auf das neue 3-1-0-System haben bestehende Turniere noch die alten Werte (Sieg=2, Niederlage=1) in der Datenbank. Diese können unter `/admin/turnier/<id>/bearbeiten` auf 3/0 aktualisiert werden.
 
 **bcrypt-Kompatibilität:**  
 `bcrypt==4.0.1` ist in `requirements.txt` fixiert. Nicht auf neuere Versionen updaten, solange passlib 1.7.4 verwendet wird.

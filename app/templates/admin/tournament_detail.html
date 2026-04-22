@@ -14,6 +14,7 @@
   </div>
   <div style="display:flex;gap:.5rem;flex-wrap:wrap">
     <a href="/admin/turnier/{{ tournament.id }}/bearbeiten" class="btn btn-secondary">✏️ Bearbeiten</a>
+    <a href="/admin/turnier/{{ tournament.id }}/rangliste" class="btn btn-secondary">📊 Rangliste</a>
     <a href="/turnier/{{ tournament.slug }}" target="_blank" class="btn btn-secondary">🌐 Ansicht</a>
     <a href="/admin/turnier/{{ tournament.id }}/urkunden" target="_blank" class="btn btn-secondary">🏆 Urkunden PDF</a>
   </div>
@@ -129,6 +130,8 @@
   {% else %}
   <div style="display:flex;flex-wrap:wrap;gap:.5rem">
     <a href="/admin/turnier/{{ tournament.id }}/spielplan" class="btn btn-primary">📋 Spielplan verwalten</a>
+    <a href="/admin/turnier/{{ tournament.id }}/spielplan/pdf" target="_blank" class="btn btn-secondary">📥 Spielplan PDF</a>
+    <a href="/admin/turnier/{{ tournament.id }}/rangliste" class="btn btn-secondary">📊 Rangliste</a>
     <form method="post" action="/admin/turnier/{{ tournament.id }}/spielplan/loeschen"
           onsubmit="return confirm('Spielplan löschen? Alle eingetragenen Ergebnisse gehen verloren!')">
       <button type="submit" class="btn btn-danger">🗑 Spielplan löschen</button>

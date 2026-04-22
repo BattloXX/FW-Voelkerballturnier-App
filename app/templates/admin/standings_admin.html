@@ -1,0 +1,281 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Rangliste – {{ tournament.name }}{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+  <div>
+    <h1 class="admin-page-title">Rangliste</h1>
+    <div style="font-size:.85rem;color:#7a7a7a">{{ tournament.name }}</div>
+  </div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+    <a href="/admin/turnier/{{ tournament.id }}" class="btn btn-secondary">← Zurück</a>
+    <a href="/admin/turnier/{{ tournament.id }}/spielplan" class="btn btn-secondary">📋 Spielplan</a>
+    <a href="/turnier/{{ tournament.slug }}/rangliste" target="_blank" class="btn btn-secondary">🌐 Öffentlich</a>
+  </div>
+</div>
+
+<div class="alert alert-info" style="margin-bottom:1rem;font-size:.875rem">
+  Ergebnisse können direkt hier oder im <a href="/admin/turnier/{{ tournament.id }}/spielplan">Spielplan</a> korrigiert werden.
+  Sieg (mehr Spieler am Feld) = <strong>{{ tournament.points_win }} Pkt</strong>,
+  Unentschieden = <strong>{{ tournament.points_draw if tournament.points_draw is defined else 1 }} Pkt</strong>,
+  Niederlage = <strong>{{ tournament.points_loss }} Pkt</strong>.
+</div>
+
+{% macro round_label(rt) %}
+  {% if rt.value == 'prelim' %}Vorrunde{% elif rt.value == 'inter' %}Zwischenrunde{% else %}Platzierungsspiele{% endif %}
+{% endmacro %}
+
+<!-- Inline-Ergebnis-Korrektur Modal -->
+<div id="edit-result-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:10px;padding:1.5rem;max-width:420px;width:95%;box-shadow:0 8px 40px rgba(0,0,0,.25)">
+    <h3 style="margin:0 0 1rem;font-size:1rem">Ergebnis korrigieren</h3>
+    <div id="edit-match-info" style="font-size:.85rem;color:#7a7a7a;margin-bottom:1rem"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem">
+      <div>
+        <label style="font-size:.8rem;color:#7a7a7a;display:block;margin-bottom:.3rem" id="edit-label-a">Team A</label>
+        <input type="number" id="edit-players-a" min="0" placeholder="Spieler" style="width:100%;padding:.5rem;border:1px solid #c8c8c8;border-radius:5px;font-size:1rem;text-align:center">
+      </div>
+      <div>
+        <label style="font-size:.8rem;color:#7a7a7a;display:block;margin-bottom:.3rem" id="edit-label-b">Team B</label>
+        <input type="number" id="edit-players-b" min="0" placeholder="Spieler" style="width:100%;padding:.5rem;border:1px solid #c8c8c8;border-radius:5px;font-size:1rem;text-align:center">
+      </div>
+    </div>
+    <div style="font-size:.75rem;color:#9a9a9a;margin-bottom:1rem">Verbleibende Spieler am Spielende eingeben. Das Team mit mehr Spielern gewinnt (3 Punkte). Bei Gleichstand: 1 Punkt je Team.</div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeEditModal()">Abbrechen</button>
+      <button class="btn btn-primary" id="edit-save-btn">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Platzierungsspiele -->
+{% if placement_groups %}
+<h2 style="font-size:1.1rem;font-weight:700;color:var(--red);margin:0 0 .75rem">🏆 Platzierungsspiele</h2>
+{% for g in placement_groups %}
+{% set grp = placement_standings[g] %}
+<div style="font-size:.8rem;font-weight:600;color:#7a7a7a;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem">Gruppe {{ g }}</div>
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:1.2rem">
+  <div class="table-wrapper">
+    <table>
+      <thead><tr>
+        <th style="width:36px;text-align:center">#</th>
+        <th>Team</th>
+        <th style="text-align:center">Sp</th>
+        <th style="text-align:center">S</th>
+        <th style="text-align:center">N</th>
+        <th style="text-align:center">Diff</th>
+        <th style="text-align:center">Pkt</th>
+      </tr></thead>
+      <tbody>
+        {% for entry in grp %}
+        <tr>
+          <td style="text-align:center;font-weight:700">{{ entry.rank }}</td>
+          <td><strong>{{ entry.team_name }}</strong></td>
+          <td style="text-align:center">{{ entry.played }}</td>
+          <td style="text-align:center">{{ entry.wins }}</td>
+          <td style="text-align:center">{{ entry.losses }}</td>
+          <td style="text-align:center">{{ '+' if entry.diff > 0 else '' }}{{ entry.diff }}</td>
+          <td style="text-align:center;font-weight:700;color:var(--red)">{{ entry.points }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" style="text-align:center;color:#7a7a7a;padding:1rem">Noch keine Ergebnisse.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Zwischenrunde -->
+{% if inter_groups %}
+<h2 style="font-size:1.1rem;font-weight:700;margin:0 0 .75rem">Zwischenrunde</h2>
+{% for g in inter_groups %}
+<div style="font-size:.8rem;font-weight:600;color:#7a7a7a;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem">Gruppe {{ g }}</div>
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:1.2rem">
+  <div class="table-wrapper">
+    <table>
+      <thead><tr>
+        <th style="width:36px;text-align:center">#</th>
+        <th>Team</th>
+        <th style="text-align:center">Sp</th>
+        <th style="text-align:center">S</th>
+        <th style="text-align:center">N</th>
+        <th style="text-align:center">Diff</th>
+        <th style="text-align:center">Pkt</th>
+      </tr></thead>
+      <tbody>
+        {% for entry in inter_standings[g] %}
+        <tr>
+          <td style="text-align:center;font-weight:700">{{ entry.rank }}</td>
+          <td><strong>{{ entry.team_name }}</strong></td>
+          <td style="text-align:center">{{ entry.played }}</td>
+          <td style="text-align:center">{{ entry.wins }}</td>
+          <td style="text-align:center">{{ entry.losses }}</td>
+          <td style="text-align:center">{{ '+' if entry.diff > 0 else '' }}{{ entry.diff }}</td>
+          <td style="text-align:center;font-weight:700;color:var(--red)">{{ entry.points }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" style="text-align:center;color:#7a7a7a;padding:1rem">Noch keine Ergebnisse.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Vorrunde -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:0 0 .75rem">Vorrunde</h2>
+{% for f in fields %}
+<div style="font-size:.8rem;font-weight:600;color:#7a7a7a;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem">Feld {{ f }}</div>
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:1.2rem">
+  <div class="table-wrapper">
+    <table>
+      <thead><tr>
+        <th style="width:36px;text-align:center">#</th>
+        <th>Team</th>
+        <th style="text-align:center">Sp</th>
+        <th style="text-align:center">S</th>
+        <th style="text-align:center">N</th>
+        <th style="text-align:center">Diff</th>
+        <th style="text-align:center">Pkt</th>
+        <th style="text-align:center">Aufstieg</th>
+      </tr></thead>
+      <tbody>
+        {% for entry in standings_by_field[f] %}
+        <tr style="{% if entry.promotes %}background:#f0fdf4{% else %}background:#fff5f5{% endif %}">
+          <td style="text-align:center;font-weight:700">{{ entry.rank }}</td>
+          <td><strong>{{ entry.team_name }}</strong></td>
+          <td style="text-align:center">{{ entry.played }}</td>
+          <td style="text-align:center">{{ entry.wins }}</td>
+          <td style="text-align:center">{{ entry.losses }}</td>
+          <td style="text-align:center">{{ '+' if entry.diff > 0 else '' }}{{ entry.diff }}</td>
+          <td style="text-align:center;font-weight:700;color:var(--red)">{{ entry.points }}</td>
+          <td style="text-align:center">{% if entry.promotes %}✅{% else %}—{% endif %}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" style="text-align:center;color:#7a7a7a;padding:1rem">Noch keine Ergebnisse.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Spielergebnisse zum Korrigieren -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:1.5rem 0 .75rem">Spielergebnisse korrigieren</h2>
+<div class="card" style="padding:0;overflow:hidden">
+  <div class="table-wrapper">
+    <table>
+      <thead><tr>
+        <th>#</th>
+        <th>Zeit</th>
+        <th>Runde / Feld</th>
+        <th>Team A</th>
+        <th style="text-align:center">Spieler</th>
+        <th>Team B</th>
+        <th>Status</th>
+        <th></th>
+      </tr></thead>
+      <tbody>
+        {% for m in matches %}
+        <tr class="{% if m.status.value == 'finished' %}match-finished{% elif m.status.value == 'active' %}match-active{% endif %}">
+          <td style="color:#7a7a7a;font-size:.8rem">{{ m.sequence_number }}</td>
+          <td style="font-size:.875rem">{{ m.scheduled_time.strftime('%H:%M') if m.scheduled_time else '–' }}</td>
+          <td><span class="tag">{{ round_label(m.round_type) }}</span> <span style="color:#7a7a7a;font-size:.8rem">Feld {{ m.field_number }}</span></td>
+          <td>{{ m.team_a.name if m.team_a else (m.team_a_placeholder or '?') }}</td>
+          <td style="text-align:center;font-weight:600">
+            {% if m.players_remaining_a is not none %}
+              {{ m.players_remaining_a }} : {{ m.players_remaining_b }}
+            {% else %}–{% endif %}
+          </td>
+          <td>{{ m.team_b.name if m.team_b else (m.team_b_placeholder or '?') }}</td>
+          <td>
+            <span class="badge badge-{{ m.status.value }}">
+              <span class="badge-dot"></span>
+              {% if m.status.value == 'pending' %}Ausstehend{% elif m.status.value == 'active' %}Läuft{% else %}Beendet{% endif %}
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-secondary btn-sm edit-result-btn"
+              data-match-id="{{ m.id }}"
+              data-tournament-id="{{ tournament.id }}"
+              data-name-a="{{ m.team_a.name if m.team_a else (m.team_a_placeholder or '?') }}"
+              data-name-b="{{ m.team_b.name if m.team_b else (m.team_b_placeholder or '?') }}"
+              data-players-a="{{ m.players_remaining_a if m.players_remaining_a is not none else '' }}"
+              data-players-b="{{ m.players_remaining_b if m.players_remaining_b is not none else '' }}">
+              ✏️ Korrigieren
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" style="text-align:center;padding:2rem;color:#7a7a7a">Kein Spielplan generiert.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let currentMatchId = null;
+let currentTournamentId = null;
+
+document.querySelectorAll('.edit-result-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentMatchId = btn.dataset.matchId;
+    currentTournamentId = btn.dataset.tournamentId;
+    document.getElementById('edit-label-a').textContent = btn.dataset.nameA;
+    document.getElementById('edit-label-b').textContent = btn.dataset.nameB;
+    document.getElementById('edit-players-a').value = btn.dataset.playersA;
+    document.getElementById('edit-players-b').value = btn.dataset.playersB;
+    document.getElementById('edit-match-info').textContent =
+      btn.dataset.nameA + ' vs ' + btn.dataset.nameB;
+    const modal = document.getElementById('edit-result-modal');
+    modal.style.display = 'flex';
+  });
+});
+
+function closeEditModal() {
+  document.getElementById('edit-result-modal').style.display = 'none';
+}
+
+document.getElementById('edit-save-btn').addEventListener('click', async () => {
+  const pA = parseInt(document.getElementById('edit-players-a').value) || 0;
+  const pB = parseInt(document.getElementById('edit-players-b').value) || 0;
+  const scoreA = pA > pB ? 1 : (pA < pB ? 0 : 0);
+  const scoreB = pB > pA ? 1 : (pB < pA ? 0 : 0);
+
+  const btn = document.getElementById('edit-save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Speichern…';
+
+  try {
+    const res = await fetch(`/admin/turnier/${currentTournamentId}/match/${currentMatchId}/ergebnis`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        score_a: scoreA, score_b: scoreB,
+        players_remaining_a: pA, players_remaining_b: pB
+      })
+    });
+    if (res.ok) {
+      window.location.reload();
+    } else {
+      alert('Fehler beim Speichern.');
+    }
+  } catch(e) {
+    alert('Netzwerkfehler.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Speichern';
+  }
+});
+
+document.getElementById('edit-result-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('edit-result-modal')) closeEditModal();
+});
+</script>
+{% endblock %}

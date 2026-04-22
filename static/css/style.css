@@ -1177,7 +1177,10 @@ select.form-control { cursor: pointer; }
   font-size: .8rem;
   margin-top: auto;
 }
-.site-footer a { color: rgba(255,255,255,.7); }
+.site-footer a { color: rgba(255,255,255,.7); text-decoration: none; }
+.site-footer a:hover { color: #fff; }
+.footer-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; text-align: left; }
+.footer-links { display: flex; gap: 1.25rem; }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */
 @media (min-width: 768px) {
