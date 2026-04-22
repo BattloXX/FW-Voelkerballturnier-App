@@ -9,6 +9,8 @@
   </div>
   <div style="display:flex;gap:.5rem;flex-wrap:wrap">
     <a href="/admin/turnier/{{ tournament.id }}" class="btn btn-secondary">← Zurück</a>
+    <a href="/admin/turnier/{{ tournament.id }}/rangliste" class="btn btn-secondary">📊 Rangliste</a>
+    <a href="/admin/turnier/{{ tournament.id }}/spielplan/pdf" target="_blank" class="btn btn-secondary">📥 PDF Export</a>
     <a href="/turnier/{{ tournament.slug }}/spielplan" target="_blank" class="btn btn-secondary">🌐 Öffentlich</a>
     <form method="post" action="/admin/turnier/{{ tournament.id }}/teams-einsetzen"
           onsubmit="return confirm('Teams aus Vorrunden-Tabelle in Zwischenrunde und Platzierungsspiele einsetzen?')">
@@ -33,6 +35,62 @@
   {% if rt.value == 'prelim' %}Vorrunde{% elif rt.value == 'inter' %}Zwischenrunde{% else %}Platzierungsspiele{% endif %}
 {% endmacro %}
 
+<!-- Match Edit Modal -->
+<div id="edit-match-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:10px;padding:1.5rem;max-width:460px;width:95%;box-shadow:0 8px 40px rgba(0,0,0,.25)">
+    <h3 style="margin:0 0 1rem;font-size:1rem">Spiel bearbeiten</h3>
+    <div style="display:grid;gap:.75rem">
+      <div>
+        <label style="font-size:.8rem;color:#7a7a7a;display:block;margin-bottom:.3rem">Uhrzeit</label>
+        <input type="datetime-local" id="edit-match-time"
+               style="width:100%;padding:.5rem;border:1px solid #c8c8c8;border-radius:5px;font-size:.9rem">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+        <div>
+          <label style="font-size:.8rem;color:#7a7a7a;display:block;margin-bottom:.3rem">Feld</label>
+          <input type="number" id="edit-match-field" min="1"
+                 style="width:100%;padding:.5rem;border:1px solid #c8c8c8;border-radius:5px;font-size:.9rem">
+        </div>
+        <div>
+          <label style="font-size:.8rem;color:#7a7a7a;display:block;margin-bottom:.3rem">Runde</label>
+          <select id="edit-match-round"
+                  style="width:100%;padding:.5rem;border:1px solid #c8c8c8;border-radius:5px;font-size:.9rem">
+            <option value="prelim">Vorrunde</option>
+            <option value="inter">Zwischenrunde</option>
+            <option value="placement">Platzierungsspiele</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+        <div>
+          <label style="font-size:.8rem;color:#7a7a7a;display:block;margin-bottom:.3rem">Team A</label>
+          <select id="edit-match-team-a"
+                  style="width:100%;padding:.5rem;border:1px solid #c8c8c8;border-radius:5px;font-size:.9rem">
+            <option value="">— Platzhalter —</option>
+            {% for team in teams %}
+            <option value="{{ team.id }}">{{ team.name }} (F{{ team.field_group }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:.8rem;color:#7a7a7a;display:block;margin-bottom:.3rem">Team B</label>
+          <select id="edit-match-team-b"
+                  style="width:100%;padding:.5rem;border:1px solid #c8c8c8;border-radius:5px;font-size:.9rem">
+            <option value="">— Platzhalter —</option>
+            {% for team in teams %}
+            <option value="{{ team.id }}">{{ team.name }} (F{{ team.field_group }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1.25rem">
+      <button class="btn btn-secondary" onclick="closeMatchModal()">Abbrechen</button>
+      <button class="btn btn-primary" id="edit-match-save-btn">Speichern</button>
+    </div>
+  </div>
+</div>
+
 <div class="card" style="padding:0;overflow:hidden">
   <div class="table-wrapper">
     <table>
@@ -43,10 +101,11 @@
           <th>Runde</th>
           <th>Feld</th>
           <th>Team A</th>
-          <th style="text-align:center">Ergebnis</th>
+          <th style="text-align:center">Spieler</th>
           <th>Team B</th>
           <th>Status</th>
-          <th>Korrigieren</th>
+          <th>Ergebnis / Korrigieren</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -58,9 +117,10 @@
           <td class="match-field">{{ m.field_number }}</td>
           <td class="match-teams">{{ m.team_a.name if m.team_a else (m.team_a_placeholder or '?') }}</td>
           <td class="match-score" style="text-align:center">
-            {% if m.score_a is not none and m.score_b is not none %}
+            {% if m.players_remaining_a is not none %}
+              <strong>{{ m.players_remaining_a }} : {{ m.players_remaining_b }}</strong>
+            {% elif m.score_a is not none %}
               {{ m.score_a }} : {{ m.score_b }}
-              {% if m.players_remaining_a is not none %}<br><small style="color:#7a7a7a">({{ m.players_remaining_a }} : {{ m.players_remaining_b }} Spieler)</small>{% endif %}
             {% else %}–{% endif %}
           </td>
           <td class="match-teams">{{ m.team_b.name if m.team_b else (m.team_b_placeholder or '?') }}</td>
@@ -73,28 +133,130 @@
           <td>
             <form class="admin-result-form" data-match-id="{{ m.id }}" data-tournament-id="{{ tournament.id }}"
                   style="display:flex;gap:.25rem;align-items:center;flex-wrap:wrap">
-              <input type="number" name="score_a" placeholder="S" min="0" max="1"
-                     value="{{ m.score_a if m.score_a is not none else '' }}"
-                     style="width:45px;padding:.3rem;text-align:center;border:1px solid #c8c8c8;border-radius:4px;font-size:.85rem">
-              <span style="color:#c8c8c8">:</span>
-              <input type="number" name="score_b" placeholder="S" min="0" max="1"
-                     value="{{ m.score_b if m.score_b is not none else '' }}"
-                     style="width:45px;padding:.3rem;text-align:center;border:1px solid #c8c8c8;border-radius:4px;font-size:.85rem">
               <input type="number" name="players_remaining_a" placeholder="Spl.A" min="0"
                      value="{{ m.players_remaining_a if m.players_remaining_a is not none else '' }}"
-                     style="width:55px;padding:.3rem;text-align:center;border:1px solid #c8c8c8;border-radius:4px;font-size:.85rem">
+                     style="width:55px;padding:.3rem;text-align:center;border:1px solid #c8c8c8;border-radius:4px;font-size:.85rem"
+                     title="Verbleibende Spieler Team A">
+              <span style="color:#c8c8c8">:</span>
               <input type="number" name="players_remaining_b" placeholder="Spl.B" min="0"
                      value="{{ m.players_remaining_b if m.players_remaining_b is not none else '' }}"
-                     style="width:55px;padding:.3rem;text-align:center;border:1px solid #c8c8c8;border-radius:4px;font-size:.85rem">
-              <button type="submit" class="btn btn-primary btn-sm">✓</button>
+                     style="width:55px;padding:.3rem;text-align:center;border:1px solid #c8c8c8;border-radius:4px;font-size:.85rem"
+                     title="Verbleibende Spieler Team B">
+              <button type="submit" class="btn btn-primary btn-sm" title="Ergebnis speichern">✓</button>
             </form>
+          </td>
+          <td>
+            <button class="btn btn-secondary btn-sm open-edit-match-btn"
+              data-match-id="{{ m.id }}"
+              data-tournament-id="{{ tournament.id }}"
+              data-time="{{ m.scheduled_time.strftime('%Y-%m-%dT%H:%M') if m.scheduled_time else '' }}"
+              data-field="{{ m.field_number }}"
+              data-round="{{ m.round_type.value }}"
+              data-team-a="{{ m.team_a_id if m.team_a_id else '' }}"
+              data-team-b="{{ m.team_b_id if m.team_b_id else '' }}"
+              title="Spieldetails bearbeiten">✏️</button>
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="9" style="text-align:center;padding:2rem;color:#7a7a7a">Kein Spielplan generiert.</td></tr>
+        <tr><td colspan="10" style="text-align:center;padding:2rem;color:#7a7a7a">Kein Spielplan generiert.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Admin result form – nur Spieler-Felder, Score wird automatisch gesetzt
+document.querySelectorAll('.admin-result-form').forEach(form => {
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const matchId = form.dataset.matchId;
+    const tournamentId = form.dataset.tournamentId;
+    const remA = parseInt(form.querySelector('[name=players_remaining_a]')?.value) || 0;
+    const remB = parseInt(form.querySelector('[name=players_remaining_b]')?.value) || 0;
+    const scoreA = remA > remB ? 1 : 0;
+    const scoreB = remB > remA ? 1 : 0;
+
+    const res = await fetch(`/admin/turnier/${tournamentId}/match/${matchId}/ergebnis`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        score_a: scoreA, score_b: scoreB,
+        players_remaining_a: remA, players_remaining_b: remB
+      })
+    });
+    if (res.ok) {
+      const row = form.closest('tr');
+      if (row) row.className = 'match-finished';
+      const badge = row?.querySelector('.badge');
+      if (badge) badge.outerHTML = '<span class="badge badge-finished"><span class="badge-dot"></span><span>Beendet</span></span>';
+      const scoreCell = row?.querySelector('.match-score');
+      if (scoreCell) scoreCell.innerHTML = `<strong>${remA} : ${remB}</strong>`;
+    } else {
+      alert('Fehler beim Speichern. Bitte erneut versuchen.');
+    }
+  });
+});
+
+// Match edit modal
+let editMatchId = null;
+let editTournamentId = null;
+
+document.querySelectorAll('.open-edit-match-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    editMatchId = btn.dataset.matchId;
+    editTournamentId = btn.dataset.tournamentId;
+    document.getElementById('edit-match-time').value = btn.dataset.time;
+    document.getElementById('edit-match-field').value = btn.dataset.field;
+    document.getElementById('edit-match-round').value = btn.dataset.round;
+    document.getElementById('edit-match-team-a').value = btn.dataset.teamA;
+    document.getElementById('edit-match-team-b').value = btn.dataset.teamB;
+    const modal = document.getElementById('edit-match-modal');
+    modal.style.display = 'flex';
+  });
+});
+
+function closeMatchModal() {
+  document.getElementById('edit-match-modal').style.display = 'none';
+}
+
+document.getElementById('edit-match-save-btn').addEventListener('click', async () => {
+  const saveBtn = document.getElementById('edit-match-save-btn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Speichern…';
+
+  const payload = {
+    scheduled_time: document.getElementById('edit-match-time').value || null,
+    field_number: parseInt(document.getElementById('edit-match-field').value) || null,
+    round_type: document.getElementById('edit-match-round').value,
+    team_a_id: document.getElementById('edit-match-team-a').value || null,
+    team_b_id: document.getElementById('edit-match-team-b').value || null,
+  };
+
+  try {
+    const res = await fetch(`/admin/turnier/${editTournamentId}/match/${editMatchId}/bearbeiten`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      window.location.reload();
+    } else {
+      alert('Fehler beim Speichern.');
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Speichern';
+    }
+  } catch(e) {
+    alert('Netzwerkfehler.');
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Speichern';
+  }
+});
+
+document.getElementById('edit-match-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('edit-match-modal')) closeMatchModal();
+});
+</script>
 {% endblock %}

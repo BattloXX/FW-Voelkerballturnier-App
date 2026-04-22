@@ -76,16 +76,17 @@
                value="{{ tournament.promotions_per_field if tournament else 6 }}">
       </div>
       <div class="form-group">
-        <label class="form-label" for="points_win">Punkte Sieg</label>
+        <label class="form-label" for="points_win">Punkte Sieg (mehr Spieler am Feld)</label>
         <input type="number" id="points_win" name="points_win" class="form-control" min="1"
-               value="{{ tournament.points_win if tournament else 2 }}">
+               value="{{ tournament.points_win if tournament else 3 }}">
+        <div class="form-hint">Unentschieden gibt immer 1 Punkt pro Team</div>
       </div>
     </div>
     <div class="form-row form-row-3">
       <div class="form-group">
         <label class="form-label" for="points_loss">Punkte Niederlage</label>
         <input type="number" id="points_loss" name="points_loss" class="form-control" min="0"
-               value="{{ tournament.points_loss if tournament else 1 }}">
+               value="{{ tournament.points_loss if tournament else 0 }}">
       </div>
       <div class="form-group">
         <label class="form-label" for="game_duration_prelim">Spielzeit Vorrunde (min)</label>
