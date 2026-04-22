@@ -145,6 +145,14 @@
       <label class="form-label">Regeltext</label>
       <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
       <div id="quill-editor" style="height:300px;background:#fff;font-size:.9375rem"></div>
+      <textarea id="quill-html-source" style="display:none;width:100%;height:300px;font-family:monospace;font-size:.875rem;padding:.5rem;border:1px solid #ccc;border-top:none;resize:vertical;box-sizing:border-box"></textarea>
+      <div style="margin-top:.35rem">
+        <button type="button" id="quill-html-toggle"
+                style="font-size:.8rem;padding:.25rem .6rem;border:1px solid #ccc;background:#f5f5f5;border-radius:.25rem;cursor:pointer">
+          &lt;/&gt; HTML-Quellcode
+        </button>
+        <span id="quill-html-hint" style="font-size:.75rem;color:#888;margin-left:.5rem"></span>
+      </div>
       <textarea id="rules_text" name="rules_text" style="display:none">{{ tournament.rules_text if tournament else '' }}</textarea>
     </div>
 
@@ -186,9 +194,40 @@ var existingHtml = document.getElementById('rules_text').value;
 if (existingHtml) {
   quill.clipboard.dangerouslyPasteHTML(existingHtml);
 }
+
+// HTML source toggle
+var htmlMode = false;
+var toggleBtn = document.getElementById('quill-html-toggle');
+var sourceArea = document.getElementById('quill-html-source');
+var hint = document.getElementById('quill-html-hint');
+var editorContainer = document.getElementById('quill-editor');
+
+toggleBtn.addEventListener('click', function() {
+  htmlMode = !htmlMode;
+  if (htmlMode) {
+    // Switch to HTML source view
+    sourceArea.value = quill.root.innerHTML === '<p><br></p>' ? '' : quill.root.innerHTML;
+    editorContainer.style.display = 'none';
+    sourceArea.style.display = 'block';
+    toggleBtn.textContent = '✎ WYSIWYG';
+    toggleBtn.style.background = '#fff3cd';
+    hint.textContent = 'HTML-Code bearbeiten oder einfügen, dann auf WYSIWYG wechseln';
+  } else {
+    // Switch back to WYSIWYG
+    var raw = sourceArea.value.trim();
+    quill.clipboard.dangerouslyPasteHTML(raw || '');
+    sourceArea.style.display = 'none';
+    editorContainer.style.display = '';
+    toggleBtn.textContent = '</> HTML-Quellcode';
+    toggleBtn.style.background = '#f5f5f5';
+    hint.textContent = '';
+  }
+});
+
 document.querySelector('form').addEventListener('submit', function() {
-  var html = quill.root.innerHTML;
-  document.getElementById('rules_text').value = (html === '<p><br></p>') ? '' : html;
+  // If still in HTML source mode, read from textarea
+  var html = htmlMode ? sourceArea.value.trim() : quill.root.innerHTML;
+  document.getElementById('rules_text').value = (html === '<p><br></p>' || html === '') ? '' : html;
 });
 </script>
 {% endblock %}

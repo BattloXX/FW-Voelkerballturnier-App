@@ -3,41 +3,78 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Schiedsrichter Login</title>
-  <link rel="stylesheet" href="/static/css/style.css">
+  <title>Schiedsrichter Login – Blaulicht Völkerball</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#ac001e",
+            "secondary": "#5b5d74",
+            "on-surface": "#171c1e",
+            "surface-container": "#eaeff1",
+            "inverse-surface": "#2c3133",
+          },
+          fontFamily: {
+            "lexend": ["Lexend","sans-serif"],
+            "grotesk": ["Space Grotesk","sans-serif"],
+          }
+        }
+      }
+    }
+  </script>
+  <style>body { font-family: 'Lexend', sans-serif; }</style>
 </head>
-<body>
-<div class="auth-page">
-  <div class="auth-card">
-    <div class="auth-logo">
-      <div style="margin-bottom:.5rem">
+<body class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+
+  <div class="w-full max-w-sm">
+    <!-- Brand -->
+    <div class="text-center mb-8">
+      <a href="/">
         <img src="https://feuerwehr.wolfurt.at/wp-content/uploads/2015/02/cropped-logo-feuerwehr-aktiv-150x150.jpg"
-             alt="Feuerwehr Wolfurt" style="width:72px;height:72px;border-radius:50%;margin:0 auto">
-      </div>
-      <div class="auth-title">Schiedsrichter</div>
-      <div class="auth-sub">Blaulicht Völkerball Turnier</div>
+             alt="Feuerwehr Wolfurt"
+             class="h-16 w-16 rounded-full mx-auto mb-4 object-cover shadow-md">
+      </a>
+      <h1 class="font-lexend font-black text-2xl uppercase tracking-tight text-on-surface">Schiedsrichter</h1>
+      <p class="text-secondary text-sm font-grotesk mt-1">Blaulicht Völkerball Turnier</p>
     </div>
 
-    {% if error %}
-    <div class="alert alert-error">{{ error }}</div>
-    {% endif %}
-
-    <form method="post" action="/schiri/login">
-      <div class="form-group">
-        <label class="form-label" for="username">Benutzername</label>
-        <input type="text" id="username" name="username" class="form-control" required autocomplete="username" autofocus>
+    <!-- Card -->
+    <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+      {% if error %}
+      <div class="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-primary font-grotesk font-semibold">
+        {{ error }}
       </div>
-      <div class="form-group">
-        <label class="form-label" for="password">Passwort</label>
-        <input type="password" id="password" name="password" class="form-control" required autocomplete="current-password">
-      </div>
-      <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:.5rem">Anmelden</button>
-    </form>
+      {% endif %}
 
-    <div style="text-align:center;margin-top:1.25rem">
-      <a href="/" style="font-size:.85rem;color:#7a7a7a">← Zurück zur Startseite</a>
+      <form method="post" action="/schiri/login" class="flex flex-col gap-4">
+        <div>
+          <label class="block text-xs font-grotesk font-semibold uppercase tracking-widest text-secondary mb-1.5" for="username">
+            Benutzername
+          </label>
+          <input type="text" id="username" name="username" required autofocus autocomplete="username"
+                 class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-grotesk focus:outline-none focus:border-primary transition-colors">
+        </div>
+        <div>
+          <label class="block text-xs font-grotesk font-semibold uppercase tracking-widest text-secondary mb-1.5" for="password">
+            Passwort
+          </label>
+          <input type="password" id="password" name="password" required autocomplete="current-password"
+                 class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-grotesk focus:outline-none focus:border-primary transition-colors">
+        </div>
+        <button type="submit"
+                class="w-full bg-primary text-white py-3 rounded-lg font-grotesk font-bold uppercase tracking-wide text-sm hover:bg-red-800 transition-colors mt-1">
+          Anmelden →
+        </button>
+      </form>
+    </div>
+
+    <div class="text-center mt-5">
+      <a href="/" class="text-sm text-secondary font-grotesk hover:text-on-surface transition-colors">← Zur Startseite</a>
     </div>
   </div>
-</div>
+
 </body>
 </html>

@@ -2,14 +2,13 @@
 {% block title %}Seite nicht gefunden{% endblock %}
 
 {% block content %}
-<div class="container">
-  <div class="page-content" style="text-align:center;padding:4rem 1rem">
-    <div style="font-size:5rem;line-height:1;margin-bottom:1rem">🚒</div>
-    <h1 style="color:var(--red);font-size:4rem;margin-bottom:.5rem">404</h1>
-    <h2 style="text-transform:none;font-family:var(--font-body);font-weight:400;color:#7a7a7a;margin-bottom:2rem">
-      Diese Seite wurde nicht gefunden.
-    </h2>
-    <a href="/" class="btn btn-primary btn-lg">← Zur Startseite</a>
-  </div>
+<div class="max-w-2xl mx-auto px-6 py-28 text-center">
+  <div class="text-7xl mb-6">🚒</div>
+  <h1 class="font-lexend font-black text-primary mb-2" style="font-size:6rem;line-height:1">404</h1>
+  <p class="text-secondary text-xl font-grotesk mb-10">Diese Seite wurde nicht gefunden.</p>
+  <a href="/"
+     class="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-grotesk font-semibold uppercase tracking-wide hover:bg-red-800 transition-colors no-underline">
+    ← Zur Startseite
+  </a>
 </div>
 {% endblock %}

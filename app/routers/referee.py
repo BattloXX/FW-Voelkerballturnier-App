@@ -111,6 +111,29 @@ def start_match(slug: str, match_id: int, request: Request, db: Session = Depend
     return JSONResponse({"ok": True})
 
 
+@router.post("/schiri/turnier/{slug}/match/{match_id}/zwischenstand")
+async def update_zwischenstand(slug: str, match_id: int, request: Request, db: Session = Depends(get_db)):
+    token = get_token_from_request(request)
+    user = get_user_from_token(token, db) if token else None
+    if not user or user.role not in (models.UserRole.referee, models.UserRole.admin, models.UserRole.superadmin):
+        raise HTTPException(status_code=401)
+
+    data = await request.json()
+    players_a = int(data.get("players_remaining_a", 0))
+    players_b = int(data.get("players_remaining_b", 0))
+
+    match = db.query(models.Match).filter(models.Match.id == match_id).first()
+    if not match:
+        raise HTTPException(status_code=404)
+    if match.status != models.MatchStatus.active:
+        raise HTTPException(status_code=400, detail="Match not active")
+
+    match.players_remaining_a = players_a
+    match.players_remaining_b = players_b
+    db.commit()
+    return JSONResponse({"ok": True})
+
+
 @router.post("/schiri/turnier/{slug}/match/{match_id}/result")
 async def submit_result(slug: str, match_id: int, request: Request, db: Session = Depends(get_db)):
     token = get_token_from_request(request)

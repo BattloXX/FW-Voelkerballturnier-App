@@ -70,6 +70,40 @@
     });
   }
 
+  // Zwischenstand button
+  const zwischenstandBtn = document.getElementById('update-zwischenstand-btn');
+  if (zwischenstandBtn) {
+    zwischenstandBtn.addEventListener('click', async () => {
+      const matchId = zwischenstandBtn.dataset.matchId;
+      const slug = zwischenstandBtn.dataset.slug;
+      const a = parseInt(inputA?.value) || 0;
+      const b = parseInt(inputB?.value) || 0;
+      const origText = zwischenstandBtn.textContent;
+      zwischenstandBtn.disabled = true;
+      zwischenstandBtn.textContent = 'Speichern…';
+      try {
+        const res = await fetch(`/schiri/turnier/${slug}/match/${matchId}/zwischenstand`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ players_remaining_a: a, players_remaining_b: b })
+        });
+        if (res.ok) {
+          zwischenstandBtn.textContent = '✓ Aktualisiert';
+          setTimeout(() => {
+            zwischenstandBtn.textContent = origText;
+            zwischenstandBtn.disabled = false;
+          }, 2000);
+        } else {
+          throw new Error();
+        }
+      } catch (e) {
+        alert('Fehler beim Speichern des Zwischenstands.');
+        zwischenstandBtn.textContent = origText;
+        zwischenstandBtn.disabled = false;
+      }
+    });
+  }
+
   // Start match button
   const startBtn = document.getElementById('start-match-btn');
   if (startBtn) {
