@@ -1,7 +1,7 @@
 import markdown
 import bleach
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models
@@ -159,6 +159,112 @@ def live_data(slug: str, db: Session = Depends(get_db)):
         })
 
     return JSONResponse({"matches": match_data, "standings": standings})
+
+
+@router.get("/infoscreen", response_class=HTMLResponse)
+def infoscreen_redirect(db: Session = Depends(get_db)):
+    t = db.query(models.Tournament).filter(
+        models.Tournament.status.in_([
+            models.TournamentStatus.active,
+            models.TournamentStatus.registration,
+        ])
+    ).order_by(models.Tournament.date).first()
+    if not t:
+        t = db.query(models.Tournament).order_by(models.Tournament.date.desc()).first()
+    if not t:
+        raise HTTPException(status_code=404, detail="Kein Turnier gefunden")
+    return RedirectResponse(url=f"/infoscreen/{t.slug}", status_code=302)
+
+
+@router.get("/infoscreen/{slug}", response_class=HTMLResponse)
+def infoscreen(slug: str, request: Request, db: Session = Depends(get_db)):
+    t = db.query(models.Tournament).filter(models.Tournament.slug == slug).first()
+    if not t:
+        raise HTTPException(status_code=404, detail="Turnier nicht gefunden")
+
+    fields = _active_fields(t.id, db)
+    standings_by_field = {f: calculate_standings(t, f, models.RoundType.prelim, db) for f in fields}
+
+    inter_groups = sorted(set(
+        m.field_number for m in db.query(models.Match).filter(
+            models.Match.tournament_id == t.id,
+            models.Match.round_type == models.RoundType.inter,
+        ).all()
+    ))
+    inter_standings_by_group = {g: calculate_inter_standings(t, g, db) for g in inter_groups}
+
+    raw_matches = db.query(models.Match).filter(
+        models.Match.tournament_id == t.id
+    ).order_by(models.Match.scheduled_time, models.Match.field_number).all()
+
+    matches = [_match_dict(m) for m in raw_matches]
+
+    return templates.TemplateResponse("infoscreen.html", {
+        "request": request,
+        "tournament": t,
+        "fields": fields,
+        "standings_by_field": standings_by_field,
+        "inter_groups": inter_groups,
+        "inter_standings_by_group": inter_standings_by_group,
+        "matches": matches,
+    })
+
+
+@router.get("/api/infoscreen/{slug}")
+def api_infoscreen(slug: str, db: Session = Depends(get_db)):
+    t = db.query(models.Tournament).filter(models.Tournament.slug == slug).first()
+    if not t:
+        raise HTTPException(status_code=404)
+
+    fields = _active_fields(t.id, db)
+    standings = {}
+    for f in fields:
+        entries = calculate_standings(t, f, models.RoundType.prelim, db)
+        standings[str(f)] = [e.model_dump() for e in entries]
+
+    inter_groups = sorted(set(
+        m.field_number for m in db.query(models.Match).filter(
+            models.Match.tournament_id == t.id,
+            models.Match.round_type == models.RoundType.inter,
+        ).all()
+    ))
+    inter_standings = {}
+    for g in inter_groups:
+        entries = calculate_inter_standings(t, g, db)
+        inter_standings[str(g)] = [e.model_dump() for e in entries]
+
+    raw_matches = db.query(models.Match).filter(
+        models.Match.tournament_id == t.id
+    ).order_by(models.Match.scheduled_time, models.Match.field_number).all()
+
+    match_data = []
+    for m in raw_matches:
+        d = _match_dict(m)
+        d["scheduled_time"] = m.scheduled_time.isoformat() if m.scheduled_time else None
+        match_data.append(d)
+
+    return JSONResponse({"matches": match_data, "standings": standings, "inter_standings": inter_standings})
+
+
+def _match_dict(m: models.Match) -> dict:
+    team_a = m.team_a.name if m.team_a else (m.team_a_placeholder or "?")
+    team_b = m.team_b.name if m.team_b else (m.team_b_placeholder or "?")
+    scheduled_time_str = m.scheduled_time.strftime("%H:%M") if m.scheduled_time else ""
+    return {
+        "id": m.id,
+        "round_type": m.round_type.value if m.round_type else "",
+        "field_number": m.field_number,
+        "scheduled_time": scheduled_time_str,
+        "team_a": team_a,
+        "team_b": team_b,
+        "team_a_name": team_a,
+        "team_b_name": team_b,
+        "score_a": m.score_a,
+        "score_b": m.score_b,
+        "players_remaining_a": m.players_remaining_a,
+        "players_remaining_b": m.players_remaining_b,
+        "status": m.status.value if m.status else "pending",
+    }
 
 
 def _active_fields(tournament_id: int, db: Session) -> list[int]:

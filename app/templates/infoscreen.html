@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ tournament.name }} – Infoscreen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red: #CC0000;
+      --red-dark: #a00000;
+      --bg: #0d0d0d;
+      --bg2: #1a1a1a;
+      --bg3: #242424;
+      --border: #2e2e2e;
+      --text: #f0f0f0;
+      --muted: #888;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --font-head: 'Oswald', sans-serif;
+      --font-body: 'Source Sans 3', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    .is-header {
+      background: var(--red);
+      padding: .6rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-shrink: 0;
+    }
+    .is-logo { height: 40px; width: 40px; object-fit: contain; border-radius: 4px; }
+    .is-title { font-family: var(--font-head); font-size: 1.4rem; font-weight: 700; letter-spacing: .02em; flex: 1; }
+    .is-meta { display: flex; gap: 1.5rem; align-items: center; font-size: .85rem; color: rgba(255,255,255,.75); }
+    .is-clock { font-family: var(--font-head); font-size: 1.3rem; font-weight: 600; color: #fff; letter-spacing: .05em; }
+    .live-pill {
+      background: var(--green);
+      color: #000;
+      font-weight: 700;
+      font-size: .7rem;
+      padding: .2rem .6rem;
+      border-radius: 99px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      display: flex; align-items: center; gap: .3rem;
+    }
+    .live-dot-anim {
+      width: 7px; height: 7px; border-radius: 50%; background: #000;
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+
+    /* ── Main grid ── */
+    .is-body {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 2fr 1fr;
+      grid-template-rows: 1fr;
+      gap: 1px;
+      background: var(--border);
+      min-height: 0;
+    }
+    .is-col {
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .is-col-title {
+      font-family: var(--font-head);
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: .6rem 1rem .4rem;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .is-scroll { flex: 1; overflow-y: auto; scrollbar-width: none; }
+    .is-scroll::-webkit-scrollbar { display: none; }
+
+    /* ── Center column: active + upcoming ── */
+    .is-center { background: var(--bg); }
+    .active-section { flex-shrink: 0; padding: .75rem; display: flex; flex-direction: column; gap: .75rem; }
+    .active-section-title {
+      font-family: var(--font-head);
+      font-size: .7rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--green);
+      padding: 0 .25rem .3rem;
+      border-bottom: 1px solid #1e3a28;
+    }
+    .no-active {
+      font-size: .9rem;
+      color: var(--muted);
+      text-align: center;
+      padding: 1.5rem;
+    }
+
+    /* Active match card */
+    .match-live {
+      background: var(--bg2);
+      border: 1px solid #1e3a28;
+      border-left: 3px solid var(--green);
+      border-radius: 6px;
+      padding: .75rem 1rem;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: .5rem;
+    }
+    .match-live .field-tag {
+      font-size: .65rem;
+      color: var(--green);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      grid-column: 1 / -1;
+      margin-bottom: .25rem;
+      font-family: var(--font-head);
+    }
+    .match-live .team-name {
+      font-family: var(--font-head);
+      font-size: clamp(1rem, 2vw, 1.5rem);
+      font-weight: 600;
+      line-height: 1.1;
+    }
+    .match-live .team-name.right { text-align: right; }
+    .match-live .score-box {
+      text-align: center;
+      font-family: var(--font-head);
+      font-size: clamp(1.4rem, 3vw, 2.2rem);
+      font-weight: 700;
+      color: var(--green);
+      letter-spacing: .05em;
+      min-width: 3.5rem;
+    }
+    .match-live .players-sub {
+      grid-column: 1 / -1;
+      text-align: center;
+      font-size: .7rem;
+      color: var(--muted);
+      margin-top: .1rem;
+    }
+
+    /* Upcoming divider */
+    .upcoming-divider {
+      font-family: var(--font-head);
+      font-size: .7rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--amber);
+      padding: .5rem .75rem .3rem;
+      border-bottom: 1px solid #2e2000;
+      flex-shrink: 0;
+    }
+
+    /* Upcoming match row */
+    .match-row {
+      display: grid;
+      grid-template-columns: 2.5rem 2rem 1fr auto 1fr auto;
+      align-items: center;
+      gap: .4rem;
+      padding: .5rem .75rem;
+      border-bottom: 1px solid var(--border);
+      font-size: .875rem;
+    }
+    .match-row:last-child { border-bottom: none; }
+    .match-row .time { font-family: var(--font-head); color: var(--muted); font-size: .8rem; }
+    .match-row .field { color: var(--muted); font-size: .75rem; text-align: center; }
+    .match-row .team { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .match-row .team.right { text-align: right; }
+    .match-row .sep { color: var(--muted); text-align: center; font-size: .8rem; }
+    .match-row .result {
+      font-family: var(--font-head);
+      font-size: .9rem;
+      font-weight: 600;
+      text-align: center;
+      color: var(--text);
+      min-width: 2.5rem;
+    }
+    .match-row.finished { opacity: .55; }
+    .match-row.finished .result { color: var(--muted); }
+
+    /* ── Left column: standings ── */
+    .standings-group { padding: .5rem 0; border-bottom: 1px solid var(--border); }
+    .standings-group:last-child { border-bottom: none; }
+    .standings-group-label {
+      font-family: var(--font-head);
+      font-size: .65rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: .3rem .75rem;
+    }
+    .standings-row {
+      display: grid;
+      grid-template-columns: 1.2rem 1fr 1.5rem 1.5rem 1.5rem 2rem;
+      align-items: center;
+      gap: .3rem;
+      padding: .35rem .75rem;
+      font-size: .8rem;
+    }
+    .standings-row.promotes { background: rgba(34,197,94,.07); }
+    .standings-row .rank { color: var(--muted); font-size: .75rem; text-align: right; }
+    .standings-row .sname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    .standings-row .sval { text-align: center; color: var(--muted); font-size: .75rem; }
+    .standings-row .spts { text-align: center; font-family: var(--font-head); font-weight: 700; color: var(--red); font-size: .9rem; }
+
+    /* ── Right column: recent results ── */
+    .result-row {
+      padding: .5rem .75rem;
+      border-bottom: 1px solid var(--border);
+      font-size: .8rem;
+    }
+    .result-row:last-child { border-bottom: none; }
+    .result-row .r-teams {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: .35rem;
+    }
+    .result-row .r-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .result-row .r-name.right { text-align: right; }
+    .result-row .r-score {
+      font-family: var(--font-head);
+      font-size: 1rem;
+      font-weight: 700;
+      text-align: center;
+      color: var(--text);
+      min-width: 2.5rem;
+    }
+    .result-row .r-winner { color: var(--green); }
+    .result-row .r-meta { color: var(--muted); font-size: .7rem; margin-top: .2rem; }
+    .result-row .r-players { color: var(--muted); font-size: .7rem; text-align: center; }
+
+    /* ── Footer bar ── */
+    .is-footer {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      padding: .3rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: .7rem;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .refresh-bar {
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .refresh-progress {
+      width: 80px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden;
+    }
+    .refresh-progress-fill {
+      height: 100%; background: var(--red); border-radius: 2px;
+      transition: width .5s linear;
+    }
+  </style>
+</head>
+<body>
+
+<header class="is-header">
+  <img class="is-logo"
+       src="https://feuerwehr.wolfurt.at/wp-content/uploads/2015/02/cropped-logo-feuerwehr-aktiv-150x150.jpg"
+       alt="FW Wolfurt">
+  <div class="is-title">{{ tournament.name }}</div>
+  <div class="is-meta">
+    <span>📅 {{ tournament.date.strftime('%d.%m.%Y') }}</span>
+    <span id="clock" class="is-clock"></span>
+    <span class="live-pill"><span class="live-dot-anim"></span>Live</span>
+  </div>
+</header>
+
+<div class="is-body">
+
+  <!-- LEFT: Rangliste -->
+  <div class="is-col">
+    <div class="is-col-title">Rangliste</div>
+    <div class="is-scroll" id="standings-col">
+      {% for field_id in fields %}
+      {% set entries = standings_by_field[field_id] %}
+      <div class="standings-group">
+        <div class="standings-group-label">Feld {{ field_id }}</div>
+        {% for e in entries %}
+        <div class="standings-row {% if e.promotes %}promotes{% endif %}">
+          <span class="rank">{{ e.rank }}</span>
+          <span class="sname">{{ e.team_name }}</span>
+          <span class="sval">{{ e.played }}</span>
+          <span class="sval">{{ e.wins }}</span>
+          <span class="sval">{{ e.diff }}</span>
+          <span class="spts">{{ e.points }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+
+      {% if inter_groups %}
+      {% for g in inter_groups %}
+      {% set entries = inter_standings_by_group[g] %}
+      <div class="standings-group">
+        <div class="standings-group-label">Zwischenrunde {{ g }}</div>
+        {% for e in entries %}
+        <div class="standings-row">
+          <span class="rank">{{ e.rank }}</span>
+          <span class="sname">{{ e.team_name }}</span>
+          <span class="sval">{{ e.played }}</span>
+          <span class="sval">{{ e.wins }}</span>
+          <span class="sval">{{ e.diff }}</span>
+          <span class="spts">{{ e.points }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if not fields %}
+      <div style="padding:1rem;color:var(--muted);font-size:.8rem">Noch keine Teams.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- CENTER: Aktiv + Upcoming/Ergebnisse -->
+  <div class="is-col is-center" style="display:flex;flex-direction:column">
+
+    <!-- Active matches -->
+    <div class="active-section" id="active-section">
+      <div class="active-section-title">🟢 Laufende Spiele</div>
+      {% set active = matches | selectattr('status', 'equalto', 'active') | list %}
+      {% if active %}
+        {% for m in active %}
+        <div class="match-live">
+          <div class="field-tag">
+            {% if m.round_type == 'prelim' %}Vorrunde{% elif m.round_type == 'inter' %}Zwischenrunde{% else %}Platzierung{% endif %}
+            · Feld {{ m.field_number }}
+          </div>
+          <div class="team-name">{{ m.team_a_name }}</div>
+          <div class="score-box">
+            {% if m.players_remaining_a is not none %}{{ m.players_remaining_a }} : {{ m.players_remaining_b }}
+            {% else %}– : –{% endif %}
+          </div>
+          <div class="team-name right">{{ m.team_b_name }}</div>
+          {% if m.players_remaining_a is not none %}
+          <div class="players-sub">verbleibende Spieler</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="no-active">Momentan kein laufendes Spiel</div>
+      {% endif %}
+    </div>
+
+    <!-- Divider + Upcoming / Ergebnisse -->
+    <div class="upcoming-divider">⏳ Nächste Spiele</div>
+    <div class="is-scroll" id="upcoming-col">
+      {% set upcoming = matches | selectattr('status', 'equalto', 'pending') | list %}
+      {% if upcoming %}
+        {% for m in upcoming[:20] %}
+        <div class="match-row">
+          <span class="time">{{ m.scheduled_time }}</span>
+          <span class="field">F{{ m.field_number }}</span>
+          <span class="team">{{ m.team_a_name }}</span>
+          <span class="sep">–</span>
+          <span class="team right">{{ m.team_b_name }}</span>
+          <span class="result"></span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="padding:1rem;color:var(--muted);font-size:.8rem;text-align:center">Keine ausstehenden Spiele</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- RIGHT: Letzte Ergebnisse -->
+  <div class="is-col">
+    <div class="is-col-title">Letzte Ergebnisse</div>
+    <div class="is-scroll" id="results-col">
+      {% set finished = matches | selectattr('status', 'equalto', 'finished') | list | reverse | list %}
+      {% if finished %}
+        {% for m in finished[:30] %}
+        <div class="result-row">
+          <div class="r-teams">
+            <span class="r-name {% if m.players_remaining_a is not none and m.players_remaining_b is not none and m.players_remaining_a > m.players_remaining_b %}r-winner{% endif %}">{{ m.team_a_name }}</span>
+            <span class="r-score">
+              {% if m.players_remaining_a is not none %}{{ m.players_remaining_a }} : {{ m.players_remaining_b }}
+              {% elif m.score_a is not none %}{{ m.score_a }} : {{ m.score_b }}
+              {% else %}– : –{% endif %}
+            </span>
+            <span class="r-name right {% if m.players_remaining_a is not none and m.players_remaining_b is not none and m.players_remaining_b > m.players_remaining_a %}r-winner{% endif %}">{{ m.team_b_name }}</span>
+          </div>
+          <div class="r-meta">
+            {% if m.round_type == 'prelim' %}Vorrunde{% elif m.round_type == 'inter' %}Zwischenrunde{% else %}Platzierung{% endif %}
+            · Feld {{ m.field_number }}
+            {% if m.scheduled_time %} · {{ m.scheduled_time }}{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="padding:1rem;color:var(--muted);font-size:.8rem">Noch keine Ergebnisse</div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<div class="is-footer">
+  <span id="last-update">Letzte Aktualisierung: –</span>
+  <div class="refresh-bar">
+    <span id="refresh-countdown">30s</span>
+    <div class="refresh-progress"><div class="refresh-progress-fill" id="progress-fill" style="width:100%"></div></div>
+  </div>
+</div>
+
+<script>
+const SLUG = {{ tournament.slug | tojson }};
+const REFRESH_INTERVAL = 30; // Sekunden
+let secondsLeft = REFRESH_INTERVAL;
+
+// Uhr
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    String(now.getHours()).padStart(2,'0') + ':' +
+    String(now.getMinutes()).padStart(2,'0') + ':' +
+    String(now.getSeconds()).padStart(2,'0');
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// Fortschrittsbalken + Countdown
+function tick() {
+  secondsLeft--;
+  document.getElementById('refresh-countdown').textContent = secondsLeft + 's';
+  const pct = (secondsLeft / REFRESH_INTERVAL) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  if (secondsLeft <= 0) {
+    secondsLeft = REFRESH_INTERVAL;
+    fetchData();
+  }
+}
+setInterval(tick, 1000);
+
+// Datum/Uhrzeit formatieren
+function fmtTime(iso) {
+  if (!iso) return '–';
+  const d = new Date(iso);
+  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+function roundLabel(rt) {
+  if (rt === 'prelim') return 'Vorrunde';
+  if (rt === 'inter') return 'Zwischenrunde';
+  return 'Platzierung';
+}
+
+// AJAX Daten laden
+async function fetchData() {
+  try {
+    const res = await fetch(`/api/infoscreen/${SLUG}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    renderData(data);
+    document.getElementById('last-update').textContent =
+      'Letzte Aktualisierung: ' + new Date().toLocaleTimeString('de-AT');
+  } catch(e) {
+    console.warn('Fetch failed:', e);
+  }
+}
+
+function renderData(data) {
+  const { matches, standings, inter_standings } = data;
+
+  // Active matches
+  const active = matches.filter(m => m.status === 'active');
+  const activeSection = document.getElementById('active-section');
+  let html = '<div class="active-section-title">🟢 Laufende Spiele</div>';
+  if (active.length) {
+    active.forEach(m => {
+      const scoreStr = m.players_remaining_a != null
+        ? `${m.players_remaining_a} : ${m.players_remaining_b}`
+        : (m.score_a != null ? `${m.score_a} : ${m.score_b}` : '– : –');
+      html += `<div class="match-live">
+        <div class="field-tag">${roundLabel(m.round_type)} · Feld ${m.field_number}</div>
+        <div class="team-name">${esc(m.team_a)}</div>
+        <div class="score-box">${scoreStr}</div>
+        <div class="team-name right">${esc(m.team_b)}</div>
+        ${m.players_remaining_a != null ? '<div class="players-sub">verbleibende Spieler</div>' : ''}
+      </div>`;
+    });
+  } else {
+    html += '<div class="no-active">Momentan kein laufendes Spiel</div>';
+  }
+  activeSection.innerHTML = html;
+
+  // Upcoming
+  const upcoming = matches.filter(m => m.status === 'pending').slice(0, 20);
+  let upHtml = '';
+  if (upcoming.length) {
+    upcoming.forEach(m => {
+      upHtml += `<div class="match-row">
+        <span class="time">${fmtTime(m.scheduled_time)}</span>
+        <span class="field">F${m.field_number}</span>
+        <span class="team">${esc(m.team_a)}</span>
+        <span class="sep">–</span>
+        <span class="team right">${esc(m.team_b)}</span>
+        <span class="result"></span>
+      </div>`;
+    });
+  } else {
+    upHtml = '<div style="padding:1rem;color:var(--muted);font-size:.8rem;text-align:center">Keine ausstehenden Spiele</div>';
+  }
+  document.getElementById('upcoming-col').innerHTML = upHtml;
+
+  // Recent results
+  const finished = matches.filter(m => m.status === 'finished').reverse().slice(0, 30);
+  let resHtml = '';
+  if (finished.length) {
+    finished.forEach(m => {
+      const scoreStr = m.players_remaining_a != null
+        ? `${m.players_remaining_a} : ${m.players_remaining_b}`
+        : (m.score_a != null ? `${m.score_a} : ${m.score_b}` : '– : –');
+      const winA = m.players_remaining_a != null && m.players_remaining_a > m.players_remaining_b;
+      const winB = m.players_remaining_b != null && m.players_remaining_b > m.players_remaining_a;
+      resHtml += `<div class="result-row">
+        <div class="r-teams">
+          <span class="r-name ${winA ? 'r-winner' : ''}">${esc(m.team_a)}</span>
+          <span class="r-score">${scoreStr}</span>
+          <span class="r-name right ${winB ? 'r-winner' : ''}">${esc(m.team_b)}</span>
+        </div>
+        <div class="r-meta">${roundLabel(m.round_type)} · Feld ${m.field_number}${m.scheduled_time ? ' · ' + fmtTime(m.scheduled_time) : ''}</div>
+      </div>`;
+    });
+  } else {
+    resHtml = '<div style="padding:1rem;color:var(--muted);font-size:.8rem">Noch keine Ergebnisse</div>';
+  }
+  document.getElementById('results-col').innerHTML = resHtml;
+
+  // Standings
+  let standHtml = '';
+  Object.entries(standings).forEach(([field, entries]) => {
+    standHtml += `<div class="standings-group">
+      <div class="standings-group-label">Feld ${field}</div>`;
+    entries.forEach(e => {
+      standHtml += `<div class="standings-row ${e.promotes ? 'promotes' : ''}">
+        <span class="rank">${e.rank}</span>
+        <span class="sname">${esc(e.team_name)}</span>
+        <span class="sval">${e.played}</span>
+        <span class="sval">${e.wins}</span>
+        <span class="sval">${e.diff > 0 ? '+' : ''}${e.diff}</span>
+        <span class="spts">${e.points}</span>
+      </div>`;
+    });
+    standHtml += '</div>';
+  });
+  if (inter_standings) {
+    Object.entries(inter_standings).forEach(([g, entries]) => {
+      standHtml += `<div class="standings-group">
+        <div class="standings-group-label">Zwischenrunde ${g}</div>`;
+      entries.forEach(e => {
+        standHtml += `<div class="standings-row">
+          <span class="rank">${e.rank}</span>
+          <span class="sname">${esc(e.team_name)}</span>
+          <span class="sval">${e.played}</span>
+          <span class="sval">${e.wins}</span>
+          <span class="sval">${e.diff > 0 ? '+' : ''}${e.diff}</span>
+          <span class="spts">${e.points}</span>
+        </div>`;
+      });
+      standHtml += '</div>';
+    });
+  }
+  if (standHtml) document.getElementById('standings-col').innerHTML = standHtml;
+}
+
+function esc(str) {
+  return String(str ?? '?')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Sofort aktualisieren
+fetchData();
+</script>
+</body>
+</html>
