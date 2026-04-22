@@ -95,17 +95,17 @@
 
 <!-- Top Navigation -->
 <header class="bg-white sticky top-0 z-50 border-b border-gray-200">
-  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center gap-4">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center gap-4">
 
     <!-- Brand -->
     <a href="/" class="flex items-center gap-3 flex-shrink-0 mr-2">
       <img src="https://feuerwehr.wolfurt.at/wp-content/uploads/2015/02/cropped-logo-feuerwehr-aktiv-150x150.jpg"
            alt="Feuerwehr Wolfurt" class="h-9 w-9 rounded-full object-cover">
       <div>
-        <div class="text-lg font-black text-primary uppercase tracking-tight font-lexend leading-none">
+        <div class="text-base sm:text-lg font-black text-primary uppercase tracking-tight font-lexend leading-none truncate max-w-[160px] sm:max-w-none">
           {% if tournament is defined and tournament %}{{ tournament.name }}{% else %}Blaulicht Turnier{% endif %}
         </div>
-        <div class="text-[10px] text-secondary font-grotesk uppercase tracking-widest leading-none mt-px">Feuerwehr Wolfurt</div>
+        <div class="text-[10px] text-secondary font-grotesk uppercase tracking-widest leading-none mt-px hidden sm:block">Feuerwehr Wolfurt</div>
       </div>
     </a>
 
@@ -248,7 +248,7 @@
 </main>
 
 <!-- Footer -->
-<footer class="bg-gray-50 border-t border-gray-200 py-8 px-6 mt-auto">
+<footer class="bg-gray-50 border-t border-gray-200 py-6 px-4 sm:px-6 mt-auto">
   <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
     <div class="flex items-center gap-3">
       <img src="https://feuerwehr.wolfurt.at/wp-content/uploads/2015/02/cropped-logo-feuerwehr-aktiv-150x150.jpg"

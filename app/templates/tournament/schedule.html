@@ -2,10 +2,31 @@
 {% block title %}Spielplan – {{ tournament.name }}{% endblock %}
 {% block body_slug %}{{ tournament.slug }}{% endblock %}
 
+{% macro match_card(m, label='') %}
+<div data-match-id="{{ m.id }}"
+     class="px-4 py-3 border-b border-gray-100 last:border-0
+            {% if m.status.value == 'active' %}match-active bg-red-50/40{% elif m.status.value == 'finished' %}match-finished{% endif %}">
+  <div class="flex items-center justify-between mb-2">
+    <span class="match-time font-grotesk font-bold text-sm text-on-surface">{{ m.scheduled_time.strftime('%H:%M') if m.scheduled_time else '–' }}</span>
+    <div class="flex items-center gap-2 flex-shrink-0">
+      {% if label %}<span class="px-1.5 py-0.5 bg-surface-container rounded font-grotesk text-xs font-semibold">{{ label }}</span>{% endif %}
+      <span class="badge badge-{{ m.status.value }}"><span class="badge-dot"></span><span class="badge-label">{% if m.status.value == 'pending' %}Ausstehend{% elif m.status.value == 'active' %}Läuft{% else %}Beendet{% endif %}</span></span>
+    </div>
+  </div>
+  <div class="flex items-center gap-2">
+    <span class="flex-1 text-right font-lexend font-semibold text-sm leading-tight text-on-surface truncate">{{ m.team_a.name if m.team_a else (m.team_a_placeholder or '?') }}</span>
+    <span class="match-score font-grotesk font-bold text-sm text-primary w-16 text-center flex-shrink-0">
+      {% if m.score_a is not none and m.score_b is not none %}{{ m.score_a }} : {{ m.score_b }}{% else %}<span class="text-gray-300">– : –</span>{% endif %}
+    </span>
+    <span class="flex-1 font-lexend font-semibold text-sm leading-tight text-on-surface truncate">{{ m.team_b.name if m.team_b else (m.team_b_placeholder or '?') }}</span>
+  </div>
+</div>
+{% endmacro %}
+
 {% block content %}
 <!-- Page Header -->
-<div class="bg-inverse-surface pb-10 pt-8">
-  <div class="max-w-7xl mx-auto px-6">
+<div class="bg-inverse-surface pb-8 sm:pb-10 pt-6 sm:pt-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
     <div class="flex items-center gap-2 text-white/50 text-xs font-grotesk font-semibold uppercase tracking-widest mb-3">
       <a href="/" class="hover:text-white/80 transition-colors">Turniere</a>
       <span>›</span>
@@ -15,7 +36,7 @@
     </div>
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 class="font-lexend font-black text-white uppercase text-4xl tracking-tight leading-none">Spielplan</h1>
+        <h1 class="font-lexend font-black text-white uppercase text-2xl sm:text-4xl tracking-tight leading-none">Spielplan</h1>
         <div class="flex items-center gap-3 mt-2 text-white/60">
           <span class="font-grotesk text-sm uppercase tracking-wide">{{ tournament.date.strftime('%d.%m.%Y') }}</span>
           <span id="live-indicator" class="hidden items-center gap-1.5 text-sm font-grotesk font-semibold uppercase tracking-wide text-primary">
@@ -28,7 +49,7 @@
   </div>
 </div>
 
-<div class="max-w-7xl mx-auto px-6 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
   {% set has_matches = (prelim_by_field.values() | sum(start=[]) | list | length) > 0 %}
   {% if not has_matches %}
   <div class="flex flex-col items-center py-16 text-center">
@@ -38,25 +59,38 @@
   {% else %}
 
   <!-- Tab Navigation -->
-  <div class="flex flex-wrap gap-1 bg-surface-container p-1 rounded-xl mb-6 w-fit">
-    {% for f in fields %}
-    <button class="tab-btn {% if loop.first %}active{% endif %}" data-tab="prelim-{{ f }}">
-      Vorrunde Feld {{ f }}
-    </button>
-    {% endfor %}
-    {% if inter_matches %}
-    <button class="tab-btn" data-tab="inter">Zwischenrunde</button>
-    {% endif %}
-    {% if placement_matches %}
-    <button class="tab-btn" data-tab="placement">Platzierungsspiele</button>
-    {% endif %}
+  <div class="overflow-x-auto mb-4 sm:mb-6 -mx-4 sm:mx-0 px-4 sm:px-0 pb-1">
+    <div class="flex gap-1 bg-surface-container p-1 rounded-xl w-max">
+      {% for f in fields %}
+      <button class="tab-btn {% if loop.first %}active{% endif %} whitespace-nowrap" data-tab="prelim-{{ f }}">
+        Vorrunde Feld {{ f }}
+      </button>
+      {% endfor %}
+      {% if inter_matches %}
+      <button class="tab-btn whitespace-nowrap" data-tab="inter">Zwischenrunde</button>
+      {% endif %}
+      {% if placement_matches %}
+      <button class="tab-btn whitespace-nowrap" data-tab="placement">Platzierungsspiele</button>
+      {% endif %}
+    </div>
   </div>
 
   <!-- Tables -->
   {% for f in fields %}
   <div class="tab-content {% if loop.first %}active{% endif %}" id="prelim-{{ f }}">
     <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-      <div class="overflow-x-auto">
+
+      <!-- Mobile card view -->
+      <div class="sm:hidden">
+        {% for m in prelim_by_field[f] %}
+        {{ match_card(m, 'Feld ' ~ m.field_number) }}
+        {% else %}
+        <p class="py-8 text-center text-secondary text-sm">Keine Spiele für dieses Feld.</p>
+        {% endfor %}
+      </div>
+
+      <!-- Desktop table view -->
+      <div class="hidden sm:block overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
             <tr class="bg-surface-container-high border-b border-gray-200">
@@ -107,7 +141,16 @@
   {% if inter_matches %}
   <div class="tab-content" id="inter">
     <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-      <div class="overflow-x-auto">
+
+      <!-- Mobile card view -->
+      <div class="sm:hidden">
+        {% for m in inter_matches %}
+        {{ match_card(m, 'Zw.' ~ m.field_number) }}
+        {% endfor %}
+      </div>
+
+      <!-- Desktop table view -->
+      <div class="hidden sm:block overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
             <tr class="bg-surface-container-high border-b border-gray-200">
@@ -156,7 +199,16 @@
   {% if placement_matches %}
   <div class="tab-content" id="placement">
     <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-      <div class="overflow-x-auto">
+
+      <!-- Mobile card view -->
+      <div class="sm:hidden">
+        {% for m in placement_matches %}
+        {{ match_card(m, 'Platz ' ~ (loop.index * 2 - 1) ~ '/' ~ (loop.index * 2)) }}
+        {% endfor %}
+      </div>
+
+      <!-- Desktop table view -->
+      <div class="hidden sm:block overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
             <tr class="bg-surface-container-high border-b border-gray-200">

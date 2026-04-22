@@ -2,7 +2,7 @@
 {% block title %}{{ team.name }} – {{ tournament.name }}{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-6 py-8">
+<div class="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
 
   <!-- Alerts -->
   {% if not pin_valid %}
@@ -143,7 +143,34 @@
       <h2 class="font-lexend font-bold text-lg uppercase tracking-tight text-on-surface">Spielplan</h2>
     </div>
     {% if matches %}
-    <div class="overflow-x-auto">
+    <!-- Mobile card view -->
+    <div class="sm:hidden divide-y divide-gray-100">
+      {% for m in matches %}
+      {% set opponent = (m.team_b.name if m.team_b else (m.team_b_placeholder or '?')) if m.team_a_id == team.id else (m.team_a.name if m.team_a else (m.team_a_placeholder or '?')) %}
+      <div data-match-id="{{ m.id }}"
+           class="px-4 py-3 {% if m.status.value == 'active' %}match-active bg-red-50/40{% elif m.status.value == 'finished' %}match-finished{% endif %}">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-2">
+            <span class="font-grotesk font-bold text-sm">{{ m.scheduled_time.strftime('%H:%M') if m.scheduled_time else '–' }}</span>
+            <span class="px-1.5 py-0.5 bg-surface-container rounded font-grotesk text-xs font-semibold">Feld {{ m.field_number }}</span>
+            <span class="font-grotesk text-xs text-secondary">{% if m.round_type.value == 'prelim' %}VR{% elif m.round_type.value == 'inter' %}ZR{% else %}Platz{% endif %}</span>
+          </div>
+          <span class="badge badge-{{ m.status.value }}"><span class="badge-dot"></span><span class="badge-label">{% if m.status.value == 'pending' %}Ausstehend{% elif m.status.value == 'active' %}Läuft{% else %}Beendet{% endif %}</span></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="font-grotesk text-xs text-secondary flex-shrink-0 w-10">Gegner</span>
+          <span class="font-lexend font-semibold text-sm flex-1">{{ opponent }}</span>
+          <span class="match-score font-grotesk font-bold text-sm text-primary flex-shrink-0">
+            {% if m.score_a is not none and m.score_b is not none %}
+              {% if m.team_a_id == team.id %}{{ m.score_a }} : {{ m.score_b }}{% else %}{{ m.score_b }} : {{ m.score_a }}{% endif %}
+            {% else %}<span class="text-gray-300">– : –</span>{% endif %}
+          </span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <!-- Desktop table view -->
+    <div class="hidden sm:block overflow-x-auto">
       <table class="w-full text-left border-collapse">
         <thead>
           <tr class="bg-surface-container-high border-b border-gray-100">
@@ -158,7 +185,7 @@
         <tbody class="divide-y divide-gray-100">
           {% for m in matches %}
           {% set opponent = (m.team_b.name if m.team_b else (m.team_b_placeholder or '?')) if m.team_a_id == team.id else (m.team_a.name if m.team_a else (m.team_a_placeholder or '?')) %}
-          <tr class="{% if m.status.value == 'active' %}match-active{% elif m.status.value == 'finished' %}match-finished{% endif %} hover:bg-surface-container-low transition-colors">
+          <tr data-match-id="{{ m.id }}" class="{% if m.status.value == 'active' %}match-active{% elif m.status.value == 'finished' %}match-finished{% endif %} hover:bg-surface-container-low transition-colors">
             <td class="py-3 px-4 font-grotesk font-bold text-sm">{{ m.scheduled_time.strftime('%H:%M') if m.scheduled_time else '–' }}</td>
             <td class="py-3 px-4"><span class="px-2 py-0.5 bg-surface-container rounded font-grotesk text-xs font-semibold uppercase">{{ m.field_number }}</span></td>
             <td class="py-3 px-4">
@@ -204,21 +231,21 @@
       <table class="w-full text-left border-collapse">
         <thead>
           <tr class="bg-surface-container-high border-b border-gray-100">
-            <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary w-10 text-center">#</th>
-            <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Team</th>
-            <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Gespielt</th>
-            <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-primary text-center">Punkte</th>
+            <th class="py-2.5 px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary w-8 text-center">#</th>
+            <th class="py-2.5 px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Team</th>
+            <th class="hidden sm:table-cell py-2.5 px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Gespielt</th>
+            <th class="py-2.5 px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-primary text-center">Punkte</th>
           </tr>
         </thead>
         <tbody>
           {% for entry in standings %}
           <tr class="{% if entry.promotes %}promotes{% else %}relegates{% endif %} hover:bg-surface-container-low transition-colors border-b border-gray-100 last:border-0">
-            <td class="py-3 px-4 text-center font-grotesk font-bold text-on-surface">{{ entry.rank }}</td>
-            <td class="py-3 px-4 font-lexend font-semibold text-sm {% if entry.team_id == team.id %}text-primary{% else %}text-on-surface{% endif %}">
+            <td class="py-2.5 px-3 text-center font-grotesk font-bold text-on-surface">{{ entry.rank }}</td>
+            <td class="py-2.5 px-3 font-lexend font-semibold text-sm {% if entry.team_id == team.id %}text-primary{% else %}text-on-surface{% endif %}">
               {% if entry.team_id == team.id %}▶ {% endif %}{{ entry.team_name }}
             </td>
-            <td class="py-3 px-4 text-center font-grotesk text-sm">{{ entry.played }}</td>
-            <td class="py-3 px-4 text-center font-grotesk font-bold text-primary">{{ entry.points }}</td>
+            <td class="hidden sm:table-cell py-2.5 px-3 text-center font-grotesk text-sm">{{ entry.played }}</td>
+            <td class="py-2.5 px-3 text-center font-grotesk font-bold text-primary">{{ entry.points }}</td>
           </tr>
           {% endfor %}
         </tbody>

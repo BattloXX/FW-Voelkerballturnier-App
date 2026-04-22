@@ -4,8 +4,8 @@
 
 {% block content %}
 <!-- Page Header -->
-<div class="bg-inverse-surface pb-10 pt-8">
-  <div class="max-w-7xl mx-auto px-6">
+<div class="bg-inverse-surface pb-8 sm:pb-10 pt-6 sm:pt-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
     <div class="flex items-center gap-2 text-white/50 text-xs font-grotesk font-semibold uppercase tracking-widest mb-3">
       <a href="/" class="hover:text-white/80 transition-colors">Turniere</a>
       <span>›</span>
@@ -14,7 +14,7 @@
       <span class="text-white/80">Rangliste</span>
     </div>
     <div class="flex flex-wrap items-center justify-between gap-4">
-      <h1 class="font-lexend font-black text-white uppercase text-4xl tracking-tight leading-none">Rangliste</h1>
+      <h1 class="font-lexend font-black text-white uppercase text-2xl sm:text-4xl tracking-tight leading-none">Rangliste</h1>
       <span id="live-indicator" class="hidden items-center gap-1.5 text-sm font-grotesk font-semibold uppercase tracking-wide text-primary">
         <span class="w-2 h-2 rounded-full bg-primary" style="animation:pulse 1.5s infinite"></span>
         Live
@@ -23,7 +23,7 @@
   </div>
 </div>
 
-<div class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8 space-y-6 sm:space-y-8">
 
   <!-- Endrangliste -->
   {% if placement_groups %}
@@ -43,31 +43,31 @@
         <table class="w-full text-left border-collapse">
           <thead>
             <tr class="border-b border-gray-100">
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary w-10 text-center">#</th>
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Team</th>
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Sp</th>
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">S</th>
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">N</th>
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Diff</th>
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-primary text-center">Pkt</th>
+              <th class="py-2.5 px-2 sm:px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary w-8 sm:w-10 text-center">#</th>
+              <th class="py-2.5 px-2 sm:px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Team</th>
+              <th class="hidden sm:table-cell py-2.5 px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Sp</th>
+              <th class="hidden sm:table-cell py-2.5 px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">S</th>
+              <th class="hidden sm:table-cell py-2.5 px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">N</th>
+              <th class="py-2.5 px-2 sm:px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Diff</th>
+              <th class="py-2.5 px-2 sm:px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-primary text-center">Pkt</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
             {% for entry in grp %}
             <tr>
-              <td class="py-3 px-4 text-center font-grotesk font-bold text-on-surface">
+              <td class="py-2.5 px-2 sm:px-3 text-center font-grotesk font-bold text-on-surface">
                 {% set final_rank = (g - 1) * (grp | length) + entry.rank %}
                 {% if final_rank == 1 %}🥇{% elif final_rank == 2 %}🥈{% elif final_rank == 3 %}🥉{% else %}{{ final_rank }}{% endif %}
               </td>
-              <td class="py-3 px-4">
-                <span class="font-lexend font-bold text-on-surface">{{ entry.team_name }}</span>
+              <td class="py-2.5 px-2 sm:px-3">
+                <span class="font-lexend font-bold text-sm sm:text-base text-on-surface">{{ entry.team_name }}</span>
                 {% if entry.organization %}<br><span class="text-xs text-secondary font-normal">{{ entry.organization }}</span>{% endif %}
               </td>
-              <td class="py-3 px-4 text-center font-grotesk text-sm text-on-surface">{{ entry.played }}</td>
-              <td class="py-3 px-4 text-center font-grotesk text-sm text-on-surface">{{ entry.wins }}</td>
-              <td class="py-3 px-4 text-center font-grotesk text-sm text-on-surface">{{ entry.losses }}</td>
-              <td class="py-3 px-4 text-center font-grotesk text-sm text-secondary">{{ '+' if entry.diff > 0 else '' }}{{ entry.diff }}</td>
-              <td class="py-3 px-4 text-center font-grotesk font-bold text-primary">{{ entry.points }}</td>
+              <td class="hidden sm:table-cell py-2.5 px-3 text-center font-grotesk text-sm text-on-surface">{{ entry.played }}</td>
+              <td class="hidden sm:table-cell py-2.5 px-3 text-center font-grotesk text-sm text-on-surface">{{ entry.wins }}</td>
+              <td class="hidden sm:table-cell py-2.5 px-3 text-center font-grotesk text-sm text-on-surface">{{ entry.losses }}</td>
+              <td class="py-2.5 px-2 sm:px-3 text-center font-grotesk text-sm text-secondary">{{ '+' if entry.diff > 0 else '' }}{{ entry.diff }}</td>
+              <td class="py-2.5 px-2 sm:px-3 text-center font-grotesk font-bold text-primary">{{ entry.points }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -92,29 +92,29 @@
         <table class="w-full text-left border-collapse">
           <thead>
             <tr class="bg-surface-container-high border-b border-gray-100">
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary w-10 text-center">#</th>
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Team</th>
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Sp</th>
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">S</th>
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">N</th>
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Diff</th>
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-primary text-center">Pkt</th>
+              <th class="py-2.5 px-2 sm:px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary w-8 sm:w-10 text-center">#</th>
+              <th class="py-2.5 px-2 sm:px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Team</th>
+              <th class="hidden sm:table-cell py-2.5 px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Sp</th>
+              <th class="hidden sm:table-cell py-2.5 px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">S</th>
+              <th class="hidden sm:table-cell py-2.5 px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">N</th>
+              <th class="py-2.5 px-2 sm:px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Diff</th>
+              <th class="py-2.5 px-2 sm:px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-primary text-center">Pkt</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
             {% if inter_standings_by_group[g] %}
               {% for entry in inter_standings_by_group[g] %}
               <tr class="hover:bg-surface-container-low transition-colors">
-                <td class="py-3 px-4 text-center font-grotesk font-bold text-on-surface">{{ entry.rank }}</td>
-                <td class="py-3 px-4">
-                  <span class="font-lexend font-bold text-on-surface">{{ entry.team_name }}</span>
+                <td class="py-2.5 px-2 sm:px-3 text-center font-grotesk font-bold text-on-surface">{{ entry.rank }}</td>
+                <td class="py-2.5 px-2 sm:px-3">
+                  <span class="font-lexend font-bold text-sm sm:text-base text-on-surface">{{ entry.team_name }}</span>
                   {% if entry.organization %}<br><span class="text-xs text-secondary font-normal">{{ entry.organization }}</span>{% endif %}
                 </td>
-                <td class="py-3 px-4 text-center font-grotesk text-sm">{{ entry.played }}</td>
-                <td class="py-3 px-4 text-center font-grotesk text-sm">{{ entry.wins }}</td>
-                <td class="py-3 px-4 text-center font-grotesk text-sm">{{ entry.losses }}</td>
-                <td class="py-3 px-4 text-center font-grotesk text-sm text-secondary">{{ '+' if entry.diff > 0 else '' }}{{ entry.diff }}</td>
-                <td class="py-3 px-4 text-center font-grotesk font-bold text-primary">{{ entry.points }}</td>
+                <td class="hidden sm:table-cell py-2.5 px-3 text-center font-grotesk text-sm">{{ entry.played }}</td>
+                <td class="hidden sm:table-cell py-2.5 px-3 text-center font-grotesk text-sm">{{ entry.wins }}</td>
+                <td class="hidden sm:table-cell py-2.5 px-3 text-center font-grotesk text-sm">{{ entry.losses }}</td>
+                <td class="py-2.5 px-2 sm:px-3 text-center font-grotesk text-sm text-secondary">{{ '+' if entry.diff > 0 else '' }}{{ entry.diff }}</td>
+                <td class="py-2.5 px-2 sm:px-3 text-center font-grotesk font-bold text-primary">{{ entry.points }}</td>
               </tr>
               {% endfor %}
             {% else %}
@@ -153,13 +153,13 @@
         <table class="w-full text-left border-collapse">
           <thead>
             <tr class="bg-surface-container-high border-b border-gray-100">
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary w-10 text-center">#</th>
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Team</th>
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Sp</th>
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">S</th>
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">N</th>
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Diff</th>
-              <th class="py-3 px-4 font-grotesk text-xs font-semibold uppercase tracking-widest text-primary text-center">Pkt</th>
+              <th class="py-2.5 px-2 sm:px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary w-8 sm:w-10 text-center">#</th>
+              <th class="py-2.5 px-2 sm:px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary">Team</th>
+              <th class="hidden sm:table-cell py-2.5 px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Sp</th>
+              <th class="hidden sm:table-cell py-2.5 px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">S</th>
+              <th class="hidden sm:table-cell py-2.5 px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">N</th>
+              <th class="py-2.5 px-2 sm:px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-secondary text-center">Diff</th>
+              <th class="py-2.5 px-2 sm:px-3 font-grotesk text-xs font-semibold uppercase tracking-widest text-primary text-center">Pkt</th>
             </tr>
           </thead>
           <tbody data-standings-field="{{ f }}" class="divide-y divide-gray-100">
@@ -167,16 +167,16 @@
               {% for entry in standings_by_field[f] %}
               <tr data-team-id="{{ entry.team_id }}"
                   class="{% if entry.promotes %}promotes{% else %}relegates{% endif %} hover:bg-surface-container-low transition-colors">
-                <td class="py-3 px-4 text-center font-grotesk font-bold text-on-surface">{{ entry.rank }}</td>
-                <td class="py-3 px-4">
-                  <span class="font-lexend font-bold text-on-surface">{{ entry.team_name }}</span>
+                <td class="py-2.5 px-2 sm:px-3 text-center font-grotesk font-bold text-on-surface">{{ entry.rank }}</td>
+                <td class="py-2.5 px-2 sm:px-3">
+                  <span class="font-lexend font-bold text-sm sm:text-base text-on-surface">{{ entry.team_name }}</span>
                   {% if entry.organization %}<br><span class="text-xs text-secondary font-normal">{{ entry.organization }}</span>{% endif %}
                 </td>
-                <td class="py-3 px-4 text-center font-grotesk text-sm">{{ entry.played }}</td>
-                <td class="py-3 px-4 text-center font-grotesk text-sm">{{ entry.wins }}</td>
-                <td class="py-3 px-4 text-center font-grotesk text-sm">{{ entry.losses }}</td>
-                <td class="py-3 px-4 text-center font-grotesk text-sm text-secondary">{{ '+' if entry.diff > 0 else '' }}{{ entry.diff }}</td>
-                <td class="py-3 px-4 text-center font-grotesk font-bold text-primary">{{ entry.points }}</td>
+                <td class="hidden sm:table-cell py-2.5 px-3 text-center font-grotesk text-sm">{{ entry.played }}</td>
+                <td class="hidden sm:table-cell py-2.5 px-3 text-center font-grotesk text-sm">{{ entry.wins }}</td>
+                <td class="hidden sm:table-cell py-2.5 px-3 text-center font-grotesk text-sm">{{ entry.losses }}</td>
+                <td class="py-2.5 px-2 sm:px-3 text-center font-grotesk text-sm text-secondary">{{ '+' if entry.diff > 0 else '' }}{{ entry.diff }}</td>
+                <td class="py-2.5 px-2 sm:px-3 text-center font-grotesk font-bold text-primary">{{ entry.points }}</td>
               </tr>
               {% endfor %}
             {% else %}

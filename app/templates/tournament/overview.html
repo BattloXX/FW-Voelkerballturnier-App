@@ -8,7 +8,7 @@
   <div class="absolute inset-0 opacity-10 pointer-events-none">
     <div class="absolute inset-0" style="background:radial-gradient(ellipse at 30% 50%, #ac001e 0%, transparent 60%)"></div>
   </div>
-  <div class="relative max-w-7xl mx-auto px-6 z-10">
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 z-10">
     <div class="flex items-center gap-2 text-white/50 text-xs font-grotesk font-semibold uppercase tracking-widest mb-3">
       <a href="/" class="hover:text-white/80 transition-colors">Turniere</a>
       <span>›</span>
@@ -28,7 +28,7 @@
       Abgeschlossen
     </span>
     {% endif %}
-    <h1 class="font-lexend font-black text-white uppercase tracking-tight leading-none mb-4" style="font-size:clamp(2rem,4vw,3rem)">
+    <h1 class="font-lexend font-black text-white uppercase tracking-tight leading-none mb-4 text-3xl sm:text-5xl">
       {{ tournament.name }}
     </h1>
     <div class="flex flex-wrap gap-6 text-white/70">
@@ -47,7 +47,7 @@
 </section>
 
 <!-- Quick Actions -->
-<section class="px-6 -mt-10 relative z-20 max-w-7xl mx-auto mb-12">
+<section class="px-4 sm:px-6 -mt-8 sm:-mt-10 relative z-20 max-w-7xl mx-auto mb-8 sm:mb-12">
   <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
     <a href="/turnier/{{ tournament.slug }}/spielplan"
        class="bg-white border border-gray-200 p-6 flex flex-col gap-4 rounded-xl shadow-sm hover:border-primary transition-colors group no-underline">
@@ -83,7 +83,7 @@
 </section>
 
 {% if tournament.description %}
-<section class="max-w-7xl mx-auto px-6 pb-12">
+<section class="max-w-7xl mx-auto px-4 sm:px-6 pb-8 sm:pb-12">
   <div class="bg-white border border-gray-200 rounded-xl p-6">
     <p class="text-secondary leading-relaxed">{{ tournament.description }}</p>
   </div>

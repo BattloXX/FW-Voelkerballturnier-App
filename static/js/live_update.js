@@ -23,29 +23,28 @@
 
   function updateMatches(matches) {
     matches.forEach(m => {
-      const row = document.querySelector(`[data-match-id="${m.id}"]`);
-      if (!row) return;
-
-      const scoreEl = row.querySelector('.match-score');
-      if (scoreEl) {
-        if (m.score_a !== null && m.score_b !== null) {
-          scoreEl.textContent = `${m.score_a} : ${m.score_b}`;
+      document.querySelectorAll(`[data-match-id="${m.id}"]`).forEach(row => {
+        const scoreEl = row.querySelector('.match-score');
+        if (scoreEl) {
+          if (m.score_a !== null && m.score_b !== null) {
+            scoreEl.textContent = `${m.score_a} : ${m.score_b}`;
+          }
         }
-      }
 
-      const badgeEl = row.querySelector('.badge');
-      if (badgeEl) {
-        badgeEl.className = `badge badge-${m.status}`;
-        const dot = badgeEl.querySelector('.badge-dot');
-        const label = badgeEl.querySelector('.badge-label');
-        if (dot) dot.className = `badge-dot`;
-        const labels = { pending: 'Ausstehend', active: 'Läuft', finished: 'Beendet' };
-        if (label) label.textContent = labels[m.status] || m.status;
-      }
+        const badgeEl = row.querySelector('.badge');
+        if (badgeEl) {
+          badgeEl.className = `badge badge-${m.status}`;
+          const dot = badgeEl.querySelector('.badge-dot');
+          const label = badgeEl.querySelector('.badge-label');
+          if (dot) dot.className = 'badge-dot';
+          const labels = { pending: 'Ausstehend', active: 'Läuft', finished: 'Beendet' };
+          if (label) label.textContent = labels[m.status] || m.status;
+        }
 
-      row.classList.remove('match-active', 'match-finished', 'match-pending');
-      if (m.status === 'active') row.classList.add('match-active');
-      else if (m.status === 'finished') row.classList.add('match-finished');
+        row.classList.remove('match-active', 'match-finished', 'match-pending');
+        if (m.status === 'active') row.classList.add('match-active');
+        else if (m.status === 'finished') row.classList.add('match-finished');
+      });
     });
   }
 
