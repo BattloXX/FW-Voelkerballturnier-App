@@ -420,3 +420,97 @@ def generate_all_teams_pdf(teams: list, tournament: models.Tournament, matches_b
     doc.build(story)
     buf.seek(0)
     return buf.read()
+
+
+def generate_schedule_pdf(tournament: models.Tournament, matches: list) -> bytes:
+    """Generate a full schedule PDF with all matches grouped by round."""
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=1*cm, bottomMargin=1.5*cm,
+                            leftMargin=1.5*cm, rightMargin=1.5*cm)
+    title_style, heading_style, body_style, _ = _get_styles()
+    story = []
+
+    # Header
+    header_data = [[Paragraph(
+        f"<b>{tournament.name}</b>",
+        ParagraphStyle("H", fontName="Helvetica-Bold", fontSize=20, textColor=colors.white, alignment=TA_CENTER)
+    )]]
+    header_table = Table(header_data, colWidths=[18*cm])
+    header_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), FW_RED),
+        ("TOPPADDING", (0, 0), (-1, -1), 14),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 14),
+    ]))
+    story.append(header_table)
+    story.append(Spacer(1, 0.3*cm))
+
+    date_str = tournament.date.strftime("%d.%m.%Y") if tournament.date else ""
+    story.append(Paragraph(f"Spielplan – {date_str}", body_style))
+    story.append(Spacer(1, 0.4*cm))
+
+    round_labels = {"prelim": "Vorrunde", "inter": "Zwischenrunde", "placement": "Platzierungsspiele"}
+    round_order = ["prelim", "inter", "placement"]
+
+    matches_by_round = {}
+    for m in matches:
+        key = m.round_type.value if hasattr(m.round_type, "value") else str(m.round_type)
+        matches_by_round.setdefault(key, []).append(m)
+
+    for rtype in round_order:
+        rmatches = matches_by_round.get(rtype)
+        if not rmatches:
+            continue
+
+        story.append(Paragraph(round_labels.get(rtype, rtype), heading_style))
+
+        table_data = [["#", "Zeit", "Feld", "Team A", "Ergebnis", "Team B", "Status"]]
+        for m in sorted(rmatches, key=lambda x: (x.scheduled_time or 0, x.sequence_number)):
+            time_str = m.scheduled_time.strftime("%H:%M") if m.scheduled_time else "–"
+            name_a = m.team_a.name if m.team_a else (m.team_a_placeholder or "?")
+            name_b = m.team_b.name if m.team_b else (m.team_b_placeholder or "?")
+
+            if m.score_a is not None and m.score_b is not None:
+                if m.players_remaining_a is not None:
+                    score_str = f"{m.players_remaining_a} : {m.players_remaining_b}\nSpieler"
+                else:
+                    score_str = f"{m.score_a} : {m.score_b}"
+            else:
+                score_str = "–"
+
+            status_map = {"pending": "Ausstehend", "active": "Läuft", "finished": "Beendet"}
+            status_str = status_map.get(m.status.value if hasattr(m.status, "value") else str(m.status), "–")
+
+            table_data.append([
+                str(m.sequence_number),
+                time_str,
+                str(m.field_number),
+                name_a,
+                score_str,
+                name_b,
+                status_str,
+            ])
+
+        col_widths = [1*cm, 1.6*cm, 1.2*cm, 4.2*cm, 2.4*cm, 4.2*cm, 2.4*cm]
+        t = Table(table_data, colWidths=col_widths)
+        t.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), FW_RED),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, FW_LIGHT]),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ("ALIGN", (0, 0), (2, -1), "CENTER"),
+            ("ALIGN", (4, 0), (4, -1), "CENTER"),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ]))
+        story.append(t)
+        story.append(Spacer(1, 0.6*cm))
+
+    if not matches:
+        story.append(Paragraph("Noch kein Spielplan generiert.", body_style))
+
+    doc.build(story)
+    buf.seek(0)
+    return buf.read()

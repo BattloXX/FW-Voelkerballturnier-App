@@ -10,8 +10,8 @@ from app.database import get_db
 from app import models
 from app.auth import authenticate_user, create_access_token, require_admin, require_superadmin, get_token_from_request, get_user_from_token, hash_password
 from app.services.schedule import generate_schedule, resolve_teams
-from app.services.pdf import generate_team_pdf, generate_all_teams_pdf, generate_urkunde_pdf
-from app.services.standings import calculate_standings
+from app.services.pdf import generate_team_pdf, generate_all_teams_pdf, generate_urkunde_pdf, generate_schedule_pdf
+from app.services.standings import calculate_standings, calculate_inter_standings, calculate_group_standings
 from app.templates_config import templates
 import markdown
 import bleach
@@ -359,8 +359,12 @@ def schedule_admin(tournament_id: int, request: Request, db: Session = Depends(g
     matches = db.query(models.Match).filter(
         models.Match.tournament_id == tournament_id
     ).order_by(models.Match.round_type, models.Match.sequence_number).all()
+    teams = db.query(models.Team).filter(
+        models.Team.tournament_id == tournament_id
+    ).order_by(models.Team.field_group, models.Team.name).all()
     return templates.TemplateResponse("admin/schedule.html", {
         "request": request, "user": user, "tournament": t, "matches": matches,
+        "teams": teams,
         "RoundType": models.RoundType, "MatchStatus": models.MatchStatus,
     })
 
@@ -374,10 +378,24 @@ async def admin_set_result(tournament_id: int, match_id: int, request: Request, 
     match = db.query(models.Match).filter(models.Match.id == match_id).first()
     if not match:
         raise HTTPException(status_code=404)
-    match.score_a = data.get("score_a")
-    match.score_b = data.get("score_b")
-    match.players_remaining_a = data.get("players_remaining_a")
-    match.players_remaining_b = data.get("players_remaining_b")
+
+    p_a = data.get("players_remaining_a")
+    p_b = data.get("players_remaining_b")
+    match.players_remaining_a = p_a
+    match.players_remaining_b = p_b
+
+    # Derive score from players (team with more players wins)
+    if p_a is not None and p_b is not None:
+        if p_a > p_b:
+            match.score_a, match.score_b = 1, 0
+        elif p_b > p_a:
+            match.score_a, match.score_b = 0, 1
+        else:
+            match.score_a, match.score_b = 0, 0
+    else:
+        match.score_a = data.get("score_a")
+        match.score_b = data.get("score_b")
+
     match.status = models.MatchStatus.finished
     match.entered_by = user.id
     match.entered_at = datetime.now(timezone.utc)
@@ -402,7 +420,106 @@ def admin_reset_match(tournament_id: int, match_id: int, request: Request, db: S
     return {"ok": True}
 
 
+@router.post("/turnier/{tournament_id}/match/{match_id}/bearbeiten")
+async def admin_edit_match(tournament_id: int, match_id: int, request: Request, db: Session = Depends(get_db)):
+    user = _get_admin_user(request, db)
+    if not user:
+        raise HTTPException(status_code=401)
+    data = await request.json()
+    match = db.query(models.Match).filter(models.Match.id == match_id).first()
+    if not match:
+        raise HTTPException(status_code=404)
+
+    if "scheduled_time" in data and data["scheduled_time"]:
+        try:
+            match.scheduled_time = datetime.fromisoformat(data["scheduled_time"])
+        except ValueError:
+            pass
+
+    if "field_number" in data and data["field_number"] is not None:
+        match.field_number = int(data["field_number"])
+
+    if "round_type" in data and data["round_type"]:
+        try:
+            match.round_type = models.RoundType(data["round_type"])
+        except ValueError:
+            pass
+
+    team_a_id = data.get("team_a_id")
+    team_b_id = data.get("team_b_id")
+    if team_a_id is not None:
+        match.team_a_id = int(team_a_id) if team_a_id else None
+    if team_b_id is not None:
+        match.team_b_id = int(team_b_id) if team_b_id else None
+
+    db.commit()
+    return {"ok": True}
+
+
+# Rangliste Admin
+@router.get("/turnier/{tournament_id}/rangliste", response_class=HTMLResponse)
+def admin_standings(tournament_id: int, request: Request, db: Session = Depends(get_db)):
+    user = _get_admin_user(request, db)
+    if not user:
+        return RedirectResponse(url="/admin/login", status_code=303)
+    t = db.query(models.Tournament).filter(models.Tournament.id == tournament_id).first()
+    if not t:
+        raise HTTPException(status_code=404)
+
+    fields = sorted(set(
+        team.field_group for team in db.query(models.Team).filter(models.Team.tournament_id == tournament_id).all()
+    ))
+    standings_by_field = {f: calculate_standings(t, f, models.RoundType.prelim, db) for f in fields}
+
+    inter_groups = sorted(set(
+        m.field_number for m in db.query(models.Match).filter(
+            models.Match.tournament_id == tournament_id,
+            models.Match.round_type == models.RoundType.inter,
+        ).all()
+    ))
+    inter_standings = {g: calculate_inter_standings(t, g, db) for g in inter_groups}
+
+    placement_groups = sorted(set(
+        m.field_number for m in db.query(models.Match).filter(
+            models.Match.tournament_id == tournament_id,
+            models.Match.round_type == models.RoundType.placement,
+        ).all()
+    ))
+    placement_standings = {g: calculate_group_standings(t, g, models.RoundType.placement, db) for g in placement_groups}
+
+    matches = db.query(models.Match).filter(
+        models.Match.tournament_id == tournament_id
+    ).order_by(models.Match.round_type, models.Match.sequence_number).all()
+
+    return templates.TemplateResponse("admin/standings_admin.html", {
+        "request": request, "user": user, "tournament": t,
+        "fields": fields, "standings_by_field": standings_by_field,
+        "inter_groups": inter_groups, "inter_standings": inter_standings,
+        "placement_groups": placement_groups, "placement_standings": placement_standings,
+        "matches": matches,
+        "RoundType": models.RoundType, "MatchStatus": models.MatchStatus,
+    })
+
+
 # PDF
+@router.get("/turnier/{tournament_id}/spielplan/pdf")
+def schedule_pdf_export(tournament_id: int, request: Request, db: Session = Depends(get_db)):
+    user = _get_admin_user(request, db)
+    if not user:
+        return RedirectResponse(url="/admin/login", status_code=303)
+    t = db.query(models.Tournament).filter(models.Tournament.id == tournament_id).first()
+    if not t:
+        raise HTTPException(status_code=404)
+    matches = db.query(models.Match).filter(
+        models.Match.tournament_id == tournament_id
+    ).order_by(models.Match.round_type, models.Match.scheduled_time, models.Match.sequence_number).all()
+    pdf_bytes = generate_schedule_pdf(t, matches)
+    fname = f"spielplan_{t.slug}.pdf"
+    return Response(content=pdf_bytes, media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="{fname}"'})
+
+
+# PDF (Teams)
 @router.get("/turnier/{tournament_id}/team/{team_id}/pdf")
 def team_pdf(tournament_id: int, team_id: int, request: Request, db: Session = Depends(get_db)):
     user = _get_admin_user(request, db)
